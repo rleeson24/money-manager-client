@@ -1,0 +1,35 @@
+/**
+ * GLOBAL STYLES
+ * 
+ * This file contains CSS that applies to your entire application.
+ * It's imported in main.tsx, so it loads before your components.
+ * 
+ * Use this file for:
+ * - Resetting default browser styles
+ * - Setting up base typography
+ * - Defining CSS variables (custom properties)
+ * - Global styles that apply everywhere
+ */
+
+/* CSS Reset - removes default browser styling */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Set up base font and color */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Code font (if you use <code> tags) */
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

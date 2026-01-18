@@ -1,0 +1,95 @@
+/**
+ * APP STYLES
+ * 
+ * This file contains CSS styles for your App component.
+ * In React, you can style components in several ways:
+ * 1. CSS files (like this one) - imported in the component
+ * 2. Inline styles - written directly in JSX
+ * 3. CSS Modules - scoped styles
+ * 4. CSS-in-JS libraries - styles written in JavaScript
+ * 
+ * For beginners, CSS files are the easiest to understand.
+ */
+
+.App {
+  /* This styles the root div of the App component */
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.App-header {
+  /* Styles for the header section */
+  padding: 2rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.App-main {
+  /* Styles for the main content area */
+  flex: 1;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+section {
+  /* Styles for each section */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 1.8rem;
+}
+
+.counter {
+  /* Styles for the counter section */
+  margin-top: 1.5rem;
+}
+
+.counter p {
+  font-size: 1.2rem;
+  margin: 1rem 0;
+}
+
+.counter strong {
+  font-size: 1.5rem;
+  color: #ffd700;
+}
+
+/* Button styles */
+button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 12px 24px;
+  margin: 8px;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+button:active {
+  transform: scale(0.98);
+}
