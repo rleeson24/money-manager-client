@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import debounce from "lodash/debounce";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -31,8 +32,8 @@ interface Expense {
   ExpenseDate: string;
   Expense: string;
   Amount: number;
-  PaymentMethod: number;
-  Category: string;
+  PaymentMethod?: number | null;
+  Category?: string | null;
   DatePaid?: string;
 }
 
@@ -82,13 +83,49 @@ export default function ExpensesEditor() {
   const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
   const [bulkUpdateForm, setBulkUpdateForm] = useState<BulkUpdateForm>({});
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const undoStack = useRef<Expense[][]>([]);
-  const debounceRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>(
-    {}
-  );
+  const patchDebounceRef = useRef<
+    Record<
+      string,
+      ((id: number, field: string, value: string | number | null | undefined) => void) & {
+        cancel(): void;
+      }
+    >
+  >({});
+  const nextTempIdRef = useRef(-1);
 
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+
+  // Draft row for "add new" - not in database until user fills and blurs
+  const [draftNewRow, setDraftNewRow] = useState<{
+    ExpenseDate: string;
+    Expense: string;
+    Amount: number;
+    PaymentMethod?: number | null;
+    Category?: string | null;
+    DatePaid: string;
+  }>({
+    ExpenseDate: "",
+    Expense: "",
+    Amount: 0,
+    PaymentMethod: undefined,
+    Category: undefined,
+    DatePaid: "",
+  });
+
+  // Debounce search term by 3 seconds (lodash debounce)
+  const setDebouncedSearchTermDebounced = useMemo(
+    () => debounce((value: string) => setDebouncedSearchTerm(value), 3000),
+    []
+  );
+  useEffect(() => {
+    setDebouncedSearchTermDebounced(searchTerm);
+    return () => setDebouncedSearchTermDebounced.cancel();
+  }, [searchTerm, setDebouncedSearchTermDebounced]);
+
   useEffect(() => {
     // Mock data for expenses
     const mockExpenses: Expense[] = [
@@ -209,17 +246,30 @@ export default function ExpensesEditor() {
     ];
 
     // Filter expenses by month
-    const filteredExpenses = mockExpenses.filter((exp) => {
+    let filteredExpenses = mockExpenses.filter((exp) => {
       const expMonth = exp.ExpenseDate.substring(0, 7); // YYYY-MM format
       return expMonth === month;
     });
+
+    // Filter by search term (client-side for mock; API would use query param)
+    if (debouncedSearchTerm.trim()) {
+      const term = debouncedSearchTerm.trim().toLowerCase();
+      filteredExpenses = filteredExpenses.filter(
+        (exp) =>
+          (exp.Expense && exp.Expense.toLowerCase().includes(term)) ||
+          (exp.Category && exp.Category.toLowerCase().includes(term)) ||
+          (exp.Amount !== undefined && exp.Amount.toString().includes(term))
+      );
+    }
 
     setExpenses(filteredExpenses);
     setCategories(mockCategories);
     setPaymentMethods(mockPaymentMethods);
 
     // TODO: Replace with actual API calls when backend is ready
-    // fetch(`/api/expenses?month=${month}`)
+    // const params = new URLSearchParams({ month });
+    // if (debouncedSearchTerm.trim()) params.set("search", debouncedSearchTerm.trim());
+    // fetch(`/api/expenses?${params}`)
     //   .then((r) => r.json())
     //   .then(setExpenses);
     // fetch("/api/categories")
@@ -228,7 +278,7 @@ export default function ExpensesEditor() {
     // fetch("/api/payment-methods")
     //   .then((r) => r.json())
     //   .then(setPaymentMethods);
-  }, [month]);
+  }, [month, debouncedSearchTerm]);
 
   useEffect(() => {
     function handleUndo(e: KeyboardEvent) {
@@ -262,7 +312,7 @@ export default function ExpensesEditor() {
     return cleaned;
   }
 
-  function optimisticUpdate(id: number, field: string, value: string | number) {
+  function optimisticUpdate(id: number, field: string, value: string | number | null | undefined) {
     undoStack.current.push([...expenses]);
 
     setDirtyCells((d) => ({ ...d, [`${id}-${field}`]: true }));
@@ -272,23 +322,32 @@ export default function ExpensesEditor() {
       prev.map((x) => (x.Expense_I === id ? { ...x, [field]: value } : x))
     );
 
+    type PatchFn = ((
+      patchId: number,
+      patchField: string,
+      patchValue: string | number | null | undefined
+    ) => void) & { cancel(): void };
     const key = `${id}-${field}`;
-    if (debounceRef.current[key]) {
-      clearTimeout(debounceRef.current[key]);
+    if (!patchDebounceRef.current[key]) {
+      patchDebounceRef.current[key] = debounce(
+        (patchId: number, patchField: string, patchValue: string | number | null | undefined) => {
+          fetch(`/api/expenses/${patchId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ [patchField]: patchValue }),
+          })
+            .then((res) => {
+              if (!res.ok) throw new Error();
+              setDirtyCells((d) => ({ ...d, [`${patchId}-${patchField}`]: false }));
+            })
+            .catch(() => {
+              setErrorCells((e) => ({ ...e, [`${patchId}-${patchField}`]: true }));
+            });
+        },
+        500
+      ) as PatchFn;
     }
-    debounceRef.current[key] = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/expenses/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ [field]: value }),
-        });
-        if (!res.ok) throw new Error();
-        setDirtyCells((d) => ({ ...d, [`${id}-${field}`]: false }));
-      } catch {
-        setErrorCells((e) => ({ ...e, [`${id}-${field}`]: true }));
-      }
-    }, 500);
+    patchDebounceRef.current[key](id, field, value);
   }
 
   function cellBadge(id: number, field: string) {
@@ -321,8 +380,8 @@ export default function ExpensesEditor() {
     }
 
     const sorted = [...expenses].sort((a, b) => {
-      const aVal: string | number | undefined = a[sortColumn];
-      const bVal: string | number | undefined = b[sortColumn];
+      const aVal: string | number | undefined | null = a[sortColumn];
+      const bVal: string | number | undefined | null = b[sortColumn];
 
       // Handle date strings
       if (sortColumn === "ExpenseDate" || sortColumn === "DatePaid") {
@@ -488,27 +547,80 @@ export default function ExpensesEditor() {
       .reduce((sum, exp) => sum + (exp.Amount || 0), 0);
   }
 
+  function hasDraftContent(): boolean {
+    return (
+      (draftNewRow.Expense?.trim() ?? "") !== "" ||
+      (draftNewRow.Amount !== 0 && !Number.isNaN(draftNewRow.Amount)) ||
+      (draftNewRow.ExpenseDate?.trim() ?? "") !== ""
+    );
+  }
+
+  function commitDraftRow() {
+    if (!hasDraftContent()) return;
+    const tempId = nextTempIdRef.current--;
+    const newExpense: Expense = {
+      Expense_I: tempId,
+      ExpenseDate: draftNewRow.ExpenseDate || `${month}-01T00:00:00`,
+      Expense: draftNewRow.Expense?.trim() ?? "",
+      Amount: draftNewRow.Amount ?? 0,
+      PaymentMethod: draftNewRow.PaymentMethod ?? undefined,
+      Category: draftNewRow.Category?.trim() || undefined,
+      DatePaid: draftNewRow.DatePaid || undefined,
+    };
+    setExpenses((prev) => [...prev, newExpense]);
+    setDraftNewRow({
+      ExpenseDate: "",
+      Expense: "",
+      Amount: 0,
+      PaymentMethod: undefined,
+      Category: undefined,
+      DatePaid: "",
+    });
+  }
+
+  function updateDraft(
+    field: keyof typeof draftNewRow,
+    value: string | number | null | undefined
+  ) {
+    setDraftNewRow((prev) => ({ ...prev, [field]: value }));
+  }
+
   return (
-    <Card className="m-4">
-      <CardContent className="overflow-auto">
-        <div className="flex justify-between mb-4">
-          <header className="page-header">
-            <h1>Edit Expenses - USD</h1>
+    <div className="w-full min-w-0">
+      <header className="w-full border-b border-gray-200 bg-white shadow-sm">
+        <div className="flex flex-wrap justify-between items-center gap-4 px-4 py-4 md:px-6">
+          <h1 className="text-xl font-semibold text-gray-900 m-0 whitespace-nowrap">
+            Edit Expenses - USD
+          </h1>
+          <div className="flex flex-wrap items-center gap-4">
             <Input
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
               className="w-40"
             />
-            <button onClick={() => navigate("/")} className="back-button">
+            <button
+              onClick={() => navigate("/")}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-600 text-white hover:bg-gray-700 transition whitespace-nowrap"
+            >
               ← Back to Home
             </button>
-          </header>
-
-          {error && <div className="error-message">{error}</div>}
+          </div>
         </div>
+      </header>
 
-        <div className="mb-4 flex items-center gap-2">
+      <Card className="m-4">
+        <CardContent className="overflow-auto">
+          {error && <div className="error-message mb-4">{error}</div>}
+
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Input
+            type="search"
+            placeholder="Search expenses..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="min-w-[200px] max-w-xs"
+          />
           <Button
             onClick={handleBulkUpdate}
             disabled={selectedExpenses.size === 0}
@@ -534,9 +646,14 @@ export default function ExpensesEditor() {
               </span>
             </div>
           )}
+          {debouncedSearchTerm && (
+            <span className="text-xs text-gray-500">
+              (search: &quot;{debouncedSearchTerm}&quot;)
+            </span>
+          )}
         </div>
 
-        <table className="w-full text-sm border-collapse">
+        <table className="expenses-table w-full text-sm">
           <thead className="sticky top-0 bg-background border-b">
             <tr>
               <th>
@@ -563,7 +680,7 @@ export default function ExpensesEditor() {
                 Expense {getSortIcon("Expense")}
               </th>
               <th
-                className="cursor-pointer hover:bg-gray-100 select-none w-28"
+                className="cursor-pointer hover:bg-gray-100 select-none w-28 text-right"
                 onClick={() => handleSort("Amount")}
               >
                 Amount {getSortIcon("Amount")}
@@ -634,15 +751,15 @@ export default function ExpensesEditor() {
                     {cellBadge(exp.Expense_I, "Expense")}
                   </div>
                 </td>
-                <td className="w-28">
-                  <div className="flex items-center">
+                <td className="w-28 text-right">
+                  <div className="flex items-center justify-end">
                     <Input
                       data-cell={`${r}-2`}
                       type="text"
                       step="0.01"
                       value={
                         exp.Amount !== undefined && exp.Amount !== null
-                          ? exp.Amount.toString()
+                          ? Number(exp.Amount).toFixed(2)
                           : ""
                       }
                       onChange={(e) => {
@@ -651,7 +768,9 @@ export default function ExpensesEditor() {
                         optimisticUpdate(exp.Expense_I, "Amount", numValue);
                       }}
                       className={
-                        exp.Amount < 0 ? "text-blue-600" : ""
+                        exp.Amount < 0
+                          ? "text-blue-600 text-right"
+                          : "text-right"
                       }
                     />
                     {cellBadge(exp.Expense_I, "Amount")}
@@ -659,15 +778,20 @@ export default function ExpensesEditor() {
                 </td>
                 <td>
                   <Select
-                    value={String(exp.PaymentMethod || "")}
+                    value={exp.PaymentMethod != null ? String(exp.PaymentMethod) : ""}
                     onValueChange={(v) =>
-                      optimisticUpdate(exp.Expense_I, "PaymentMethod", v)
+                      optimisticUpdate(
+                        exp.Expense_I,
+                        "PaymentMethod",
+                        v === "" ? undefined : Number(v)
+                      )
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="">— None —</SelectItem>
                       {paymentMethods.map((pm) => (
                         <SelectItem key={pm.ID} value={String(pm.ID)}>
                           {pm.PaymentMethod}
@@ -679,15 +803,20 @@ export default function ExpensesEditor() {
                 </td>
                 <td>
                   <Select
-                    value={exp.Category || ""}
+                    value={exp.Category ?? ""}
                     onValueChange={(v) =>
-                      optimisticUpdate(exp.Expense_I, "Category", v)
+                      optimisticUpdate(
+                        exp.Expense_I,
+                        "Category",
+                        v === "" ? undefined : v
+                      )
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="">— None —</SelectItem>
                       {categories.map((c) => (
                         <SelectItem key={c.Category_I} value={c.Name}>
                           {c.Name}
@@ -716,11 +845,104 @@ export default function ExpensesEditor() {
                 </td>
               </tr>
             ))}
+            {/* New row placeholder - not in database until Add is clicked */}
+            <tr className="border-b border-dashed bg-gray-50/70" aria-label="New expense row">
+              <td className="align-middle">
+                <Button
+                  type="button"
+                  variant="primary"
+                  disabled={!hasDraftContent()}
+                  onClick={commitDraftRow}
+                  className="!px-2 !py-1 text-xs"
+                >
+                  Add
+                </Button>
+              </td>
+              <td className="w-32">
+                <Input
+                  type="date"
+                  placeholder="Date"
+                  value={draftNewRow.ExpenseDate}
+                  onChange={(e) => updateDraft("ExpenseDate", e.target.value)}
+                  className="bg-white/80 placeholder:italic"
+                />
+              </td>
+              <td>
+                <Input
+                  placeholder="Add new expense..."
+                  value={draftNewRow.Expense}
+                  onChange={(e) => updateDraft("Expense", e.target.value)}
+                  className="bg-white/80 placeholder:italic placeholder:text-gray-400"
+                />
+              </td>
+              <td className="w-28 text-right">
+                <Input
+                  type="text"
+                  value={
+                    draftNewRow.Amount !== 0 && !Number.isNaN(draftNewRow.Amount)
+                      ? Number(draftNewRow.Amount).toFixed(2)
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const normalized = normalizeAmountInput(e.target.value);
+                    updateDraft("Amount", parseFloat(normalized) || 0);
+                  }}
+                  placeholder="0.00"
+                  className="text-right bg-white/80 placeholder:italic placeholder:text-gray-400"
+                />
+              </td>
+              <td>
+                <Select
+                  value={draftNewRow.PaymentMethod != null ? String(draftNewRow.PaymentMethod) : ""}
+                  onValueChange={(v) =>
+                    updateDraft("PaymentMethod", v === "" ? undefined : Number(v))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">— None —</SelectItem>
+                    {paymentMethods.map((pm) => (
+                      <SelectItem key={pm.ID} value={String(pm.ID)}>
+                        {pm.PaymentMethod}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </td>
+              <td>
+                <Select
+                  value={draftNewRow.Category ?? ""}
+                  onValueChange={(v) => updateDraft("Category", v === "" ? undefined : v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">— None —</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.Category_I} value={c.Name}>
+                        {c.Name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </td>
+              <td className="w-32">
+                <Input
+                  type="date"
+                  value={draftNewRow.DatePaid}
+                  onChange={(e) => updateDraft("DatePaid", e.target.value)}
+                  className="bg-white/80 placeholder:italic"
+                />
+              </td>
+            </tr>
           </tbody>
         </table>
 
         <p className="text-xs text-muted-foreground mt-2">
-          ⚠ Unsaved · ❌ Error · Ctrl+Z Undo
+          ⚠ Unsaved · ❌ Error · Ctrl+Z Undo · Bottom row: new expense (click Add to save)
         </p>
       </CardContent>
 
@@ -862,5 +1084,6 @@ export default function ExpensesEditor() {
         </DialogContent>
       </Dialog>
     </Card>
+    </div>
   );
 }

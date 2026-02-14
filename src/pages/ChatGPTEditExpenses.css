@@ -9,8 +9,8 @@
 }
 
 .expenses-table th {
-  text-align: left;
-  padding: 8px;
+  text-align: center;
+  padding: 8px 12px;
   font-weight: 600;
   background-color: #fafafa;
   border-bottom: 2px solid #e5e7eb;
@@ -30,7 +30,7 @@
 }
 
 .expenses-table td {
-  padding: 6px;
+  padding: 6px 12px;
   border-bottom: 1px solid #e5e7eb;
   vertical-align: middle;
 }
