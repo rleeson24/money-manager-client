@@ -7,20 +7,9 @@ export interface Expense {
   id: string | number
   description: string
   amount: number
-  category: string
+  category?: string | null
   date: string // ISO date string format: YYYY-MM-DD
-  notes?: string
-}
-
-/**
- * Expense Form Data
- * 
- * Used for creating and editing expenses
- */
-export interface ExpenseFormData {
-  description: string
-  amount: number
-  category: string
-  date: string
-  notes?: string
+  notes?: string | null
+  paymentMethod?: number | null
+  datePaid?: string | null // When the expense was paid (e.g. credit card payoff)
 }

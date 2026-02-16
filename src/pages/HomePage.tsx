@@ -29,6 +29,9 @@ function HomePage() {
             <Link to="/expenses/chatgptedit" className="nav-link">
               🤖 ChatGPT Edit Expenses
             </Link>
+            <Link to="/expenses/creditcard" className="nav-link">
+              🤖 Credit Card Expenses
+            </Link>
           </div>
         </section>
 

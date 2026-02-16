@@ -16,12 +16,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/chatGPTUIComponents";
-import {
-  getExpenses,
-  getCategories,
-  getPaymentMethods,
-} from "../services/expenseEditorService";
-import type { Category, Expense, PaymentMethod } from "../types/expenseEditor";
+import { getExpenses, updateExpense, bulkUpdateExpenses, bulkDeleteExpenses } from "../services/expenseService";
+import type { Expense } from "../types/expense";
+import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
+import { getCategories, type Category } from "../services/categoryService";
 import "./ChatGPTEditExpenses.css";
 
 /*
@@ -38,18 +36,18 @@ interface CellState {
 
 type SortDirection = "asc" | "desc" | null;
 type SortColumn =
-  | "ExpenseDate"
-  | "Expense"
-  | "Amount"
-  | "PaymentMethod"
-  | "Category"
-  | "DatePaid"
+  | "date"
+  | "description"
+  | "amount"
+  | "paymentMethod"
+  | "category"
+  | "datePaid"
   | null;
 
 interface BulkUpdateForm {
-  ExpenseDate?: string;
-  Category?: string;
-  DatePaid?: string | null;
+  date?: string;
+  category?: string;
+  datePaid?: string | null;
   setDatePaidToNull?: boolean;
 }
 
@@ -86,24 +84,24 @@ export default function ExpensesEditor() {
 
   // Draft row for "add new" - not in database until user fills and blurs
   const [draftNewRow, setDraftNewRow] = useState<{
-    ExpenseDate: string;
-    Expense: string;
-    Amount: number;
-    PaymentMethod?: number | null;
-    Category?: string | null;
-    DatePaid: string;
+    date: string;
+    description: string;
+    amount: number;
+    paymentMethod?: number | null;
+    category?: string | null;
+    datePaid: string;
   }>({
-    ExpenseDate: "",
-    Expense: "",
-    Amount: 0,
-    PaymentMethod: undefined,
-    Category: undefined,
-    DatePaid: "",
+    date: "",
+    description: "",
+    amount: 0,
+    paymentMethod: undefined,
+    category: undefined,
+    datePaid: "",
   });
 
-  // Debounce search term by 3 seconds (lodash debounce)
+  // Debounce search term by 1 second (lodash debounce)
   const setDebouncedSearchTermDebounced = useMemo(
-    () => debounce((value: string) => setDebouncedSearchTerm(value), 3000),
+    () => debounce((value: string) => setDebouncedSearchTerm(value), 1000),
     []
   );
   useEffect(() => {
@@ -115,7 +113,7 @@ export default function ExpensesEditor() {
     let cancelled = false;
     const search = debouncedSearchTerm.trim() || undefined;
     Promise.all([
-      getExpenses(month, search),
+      getExpenses({ month, search }),
       getCategories(),
       getPaymentMethods(),
     ]).then(([expensesData, categoriesData, paymentMethodsData]) => {
@@ -167,8 +165,9 @@ export default function ExpensesEditor() {
     setDirtyCells((d) => ({ ...d, [`${id}-${field}`]: true }));
     setErrorCells((e) => ({ ...e, [`${id}-${field}`]: false }));
 
+    const idNum = (xId: string | number) => (typeof xId === "number" ? xId : parseInt(String(xId), 10));
     setExpenses((prev) =>
-      prev.map((x) => (x.Expense_I === id ? { ...x, [field]: value } : x))
+      prev.map((x) => (idNum(x.id) === id ? { ...x, [field]: value } : x))
     );
 
     type PatchFn = ((
@@ -180,23 +179,23 @@ export default function ExpensesEditor() {
     if (!patchDebounceRef.current[key]) {
       patchDebounceRef.current[key] = debounce(
         (patchId: number, patchField: string, patchValue: string | number | null | undefined) => {
-          fetch(`/api/expenses/${patchId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ [patchField]: patchValue }),
-          })
-            .then((res) => {
-              if (!res.ok) throw new Error();
+          const payload: Partial<Expense> = { [patchField]: patchValue === undefined || patchValue === null ? undefined : patchValue };
+          updateExpense(patchId, payload)
+            .then(() => {
               setDirtyCells((d) => ({ ...d, [`${patchId}-${patchField}`]: false }));
             })
             .catch(() => {
               setErrorCells((e) => ({ ...e, [`${patchId}-${patchField}`]: true }));
             });
         },
-        500
+        1000
       ) as PatchFn;
     }
     patchDebounceRef.current[key](id, field, value);
+  }
+
+  function expIdNum(exp: Expense): number {
+    return typeof exp.id === "number" ? exp.id : parseInt(String(exp.id), 10);
   }
 
   function cellBadge(id: number, field: string) {
@@ -229,11 +228,10 @@ export default function ExpensesEditor() {
     }
 
     const sorted = [...expenses].sort((a, b) => {
-      const aVal: string | number | undefined | null = a[sortColumn];
-      const bVal: string | number | undefined | null = b[sortColumn];
+      const aVal: string | number | undefined | null = a[sortColumn as keyof Expense];
+      const bVal: string | number | undefined | null = b[sortColumn as keyof Expense];
 
-      // Handle date strings
-      if (sortColumn === "ExpenseDate" || sortColumn === "DatePaid") {
+      if (sortColumn === "date" || sortColumn === "datePaid") {
         const aDate = aVal ? new Date(aVal as string).getTime() : 0;
         const bDate = bVal ? new Date(bVal as string).getTime() : 0;
         if (aDate < bDate) return sortDirection === "asc" ? -1 : 1;
@@ -241,8 +239,7 @@ export default function ExpensesEditor() {
         return 0;
       }
 
-      // Handle numbers
-      if (sortColumn === "Amount" || sortColumn === "PaymentMethod") {
+      if (sortColumn === "amount" || sortColumn === "paymentMethod") {
         const aNum = (aVal as number) ?? 0;
         const bNum = (bVal as number) ?? 0;
         if (aNum < bNum) return sortDirection === "asc" ? -1 : 1;
@@ -250,7 +247,6 @@ export default function ExpensesEditor() {
         return 0;
       }
 
-      // Handle strings
       const aStr = (aVal as string)?.toLowerCase() ?? "";
       const bStr = (bVal as string)?.toLowerCase() ?? "";
       if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
@@ -271,7 +267,7 @@ export default function ExpensesEditor() {
   // Checkbox functionality
   function handleSelectAll(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.checked) {
-      setSelectedExpenses(new Set(expenses.map((exp) => exp.Expense_I)));
+      setSelectedExpenses(new Set(expenses.map((exp) => expIdNum(exp))));
     } else {
       setSelectedExpenses(new Set());
     }
@@ -298,63 +294,46 @@ export default function ExpensesEditor() {
     setBulkUpdateForm({});
   }
 
-  function handleBulkUpdateSubmit() {
+  async function handleBulkUpdateSubmit() {
     const updates: Partial<Expense> = {};
 
-    // Only include fields that were changed
-    if (
-      bulkUpdateForm.ExpenseDate !== undefined &&
-      bulkUpdateForm.ExpenseDate !== ""
-    ) {
-      updates.ExpenseDate = bulkUpdateForm.ExpenseDate + "T00:00:00";
+    if (bulkUpdateForm.date !== undefined && bulkUpdateForm.date !== "") {
+      updates.date = bulkUpdateForm.date + "T00:00:00";
     }
 
-    if (
-      bulkUpdateForm.Category !== undefined &&
-      bulkUpdateForm.Category !== ""
-    ) {
-      updates.Category = bulkUpdateForm.Category;
+    if (bulkUpdateForm.category !== undefined && bulkUpdateForm.category !== "") {
+      updates.category = bulkUpdateForm.category;
     }
 
-    // Handle DatePaid - check if set to null checkbox is checked
     if (bulkUpdateForm.setDatePaidToNull) {
-      updates.DatePaid = undefined;
-    } else if (
-      bulkUpdateForm.DatePaid !== undefined &&
-      bulkUpdateForm.DatePaid !== ""
-    ) {
-      updates.DatePaid = bulkUpdateForm.DatePaid + "T00:00:00";
+      updates.datePaid = undefined;
+    } else if (bulkUpdateForm.datePaid !== undefined && bulkUpdateForm.datePaid !== "") {
+      updates.datePaid = bulkUpdateForm.datePaid + "T00:00:00";
     }
 
-    // Apply updates to selected expenses
     setExpenses((prev) =>
       prev.map((exp) =>
-        selectedExpenses.has(exp.Expense_I) ? { ...exp, ...updates } : exp
+        selectedExpenses.has(expIdNum(exp)) ? { ...exp, ...updates } : exp
       )
     );
 
-    // Mark cells as dirty for optimistic updates
     selectedExpenses.forEach((id) => {
-      if (updates.ExpenseDate) {
-        setDirtyCells((d) => ({ ...d, [`${id}-ExpenseDate`]: true }));
-      }
-      if (updates.Category) {
-        setDirtyCells((d) => ({ ...d, [`${id}-Category`]: true }));
-      }
-      if (updates.DatePaid !== undefined) {
-        setDirtyCells((d) => ({ ...d, [`${id}-DatePaid`]: true }));
-      }
+      if (updates.date) setDirtyCells((d) => ({ ...d, [`${id}-date`]: true }));
+      if (updates.category) setDirtyCells((d) => ({ ...d, [`${id}-category`]: true }));
+      if (updates.datePaid !== undefined) setDirtyCells((d) => ({ ...d, [`${id}-datePaid`]: true }));
     });
 
-    // TODO: Make API call for bulk update
-    // await fetch("/api/expenses/bulk", {
-    //   method: "PATCH",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     ids: Array.from(selectedExpenses),
-    //     updates,
-    //   }),
-    // });
+    try {
+      await bulkUpdateExpenses(Array.from(selectedExpenses), updates);
+      selectedExpenses.forEach((id) => {
+        if (updates.date) setDirtyCells((d) => ({ ...d, [`${id}-date`]: false }));
+        if (updates.category) setDirtyCells((d) => ({ ...d, [`${id}-category`]: false }));
+        if (updates.datePaid !== undefined) setDirtyCells((d) => ({ ...d, [`${id}-datePaid`]: false }));
+      });
+    } catch (err) {
+      console.error("Error bulk updating expenses:", err);
+      setError("Failed to bulk update expenses");
+    }
 
     setBulkUpdateDialogOpen(false);
     setBulkUpdateForm({});
@@ -370,20 +349,20 @@ export default function ExpensesEditor() {
     setBulkDeleteDialogOpen(true);
   }
 
-  function handleBulkDeleteConfirm() {
-    // Remove selected expenses from the list
+  async function handleBulkDeleteConfirm() {
     setExpenses((prev) =>
-      prev.filter((exp) => !selectedExpenses.has(exp.Expense_I))
+      prev.filter((exp) => !selectedExpenses.has(expIdNum(exp)))
     );
 
-    // TODO: Make API call for bulk delete
-    // await fetch("/api/expenses/bulk", {
-    //   method: "DELETE",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     ids: Array.from(selectedExpenses),
-    //   }),
-    // });
+    try {
+      await bulkDeleteExpenses(Array.from(selectedExpenses));
+    } catch (err) {
+      console.error("Error bulk deleting expenses:", err);
+      setError("Failed to bulk delete expenses");
+      // Reload expenses to restore the list
+      const expensesData = await getExpenses({ month });
+      setExpenses(expensesData);
+    }
 
     setBulkDeleteDialogOpen(false);
     setSelectedExpenses(new Set());
@@ -392,15 +371,15 @@ export default function ExpensesEditor() {
   // Calculate sum of selected expenses
   function getSelectedSum(): number {
     return expenses
-      .filter((exp) => selectedExpenses.has(exp.Expense_I))
-      .reduce((sum, exp) => sum + (exp.Amount || 0), 0);
+      .filter((exp) => selectedExpenses.has(expIdNum(exp)))
+      .reduce((sum, exp) => sum + (exp.amount || 0), 0);
   }
 
   function hasDraftContent(): boolean {
     return (
-      (draftNewRow.Expense?.trim() ?? "") !== "" ||
-      (draftNewRow.Amount !== 0 && !Number.isNaN(draftNewRow.Amount)) ||
-      (draftNewRow.ExpenseDate?.trim() ?? "") !== ""
+      (draftNewRow.description?.trim() ?? "") !== "" ||
+      (draftNewRow.amount !== 0 && !Number.isNaN(draftNewRow.amount)) ||
+      (draftNewRow.date?.trim() ?? "") !== ""
     );
   }
 
@@ -408,22 +387,22 @@ export default function ExpensesEditor() {
     if (!hasDraftContent()) return;
     const tempId = nextTempIdRef.current--;
     const newExpense: Expense = {
-      Expense_I: tempId,
-      ExpenseDate: draftNewRow.ExpenseDate || `${month}-01T00:00:00`,
-      Expense: draftNewRow.Expense?.trim() ?? "",
-      Amount: draftNewRow.Amount ?? 0,
-      PaymentMethod: draftNewRow.PaymentMethod ?? undefined,
-      Category: draftNewRow.Category?.trim() || undefined,
-      DatePaid: draftNewRow.DatePaid || undefined,
+      id: tempId,
+      date: draftNewRow.date || `${month}-01T00:00:00`,
+      description: draftNewRow.description?.trim() ?? "",
+      amount: draftNewRow.amount ?? 0,
+      paymentMethod: draftNewRow.paymentMethod ?? null,
+      category: draftNewRow.category?.trim() || null,
+      datePaid: draftNewRow.datePaid || null,
     };
     setExpenses((prev) => [...prev, newExpense]);
     setDraftNewRow({
-      ExpenseDate: "",
-      Expense: "",
-      Amount: 0,
-      PaymentMethod: undefined,
-      Category: undefined,
-      DatePaid: "",
+      date: "",
+      description: "",
+      amount: 0,
+      paymentMethod: undefined,
+      category: undefined,
+      datePaid: "",
     });
   }
 
@@ -518,51 +497,53 @@ export default function ExpensesEditor() {
               </th>
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none w-32"
-                onClick={() => handleSort("ExpenseDate")}
+                onClick={() => handleSort("date")}
               >
-                Date {getSortIcon("ExpenseDate")}
+                Date {getSortIcon("date")}
               </th>
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none"
-                onClick={() => handleSort("Expense")}
+                onClick={() => handleSort("description")}
               >
-                Expense {getSortIcon("Expense")}
+                Expense {getSortIcon("description")}
               </th>
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none w-28 text-right"
-                onClick={() => handleSort("Amount")}
+                onClick={() => handleSort("amount")}
               >
-                Amount {getSortIcon("Amount")}
+                Amount {getSortIcon("amount")}
               </th>
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none"
-                onClick={() => handleSort("PaymentMethod")}
+                onClick={() => handleSort("paymentMethod")}
               >
-                Method {getSortIcon("PaymentMethod")}
+                Method {getSortIcon("paymentMethod")}
               </th>
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none"
-                onClick={() => handleSort("Category")}
+                onClick={() => handleSort("category")}
               >
-                Category {getSortIcon("Category")}
+                Category {getSortIcon("category")}
               </th>
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none w-32"
-                onClick={() => handleSort("DatePaid")}
+                onClick={() => handleSort("datePaid")}
               >
-                Date Paid {getSortIcon("DatePaid")}
+                Date Paid {getSortIcon("datePaid")}
               </th>
             </tr>
           </thead>
           <tbody>
-            {getSortedExpenses().map((exp, r) => (
-              <tr key={exp.Expense_I} className="border-b">
+            {getSortedExpenses().map((exp, r) => {
+              const id = expIdNum(exp);
+              return (
+              <tr key={id} className="border-b">
                 <td>
                   <input
                     type="checkbox"
-                    checked={selectedExpenses.has(exp.Expense_I)}
+                    checked={selectedExpenses.has(id)}
                     onChange={(e) =>
-                      handleSelectExpense(exp.Expense_I, e.target.checked)
+                      handleSelectExpense(id, e.target.checked)
                     }
                     className="cursor-pointer"
                   />
@@ -572,32 +553,24 @@ export default function ExpensesEditor() {
                     <Input
                       data-cell={`${r}-0`}
                       type="date"
-                      value={exp.ExpenseDate?.substring(0, 10) || ""}
+                      value={exp.date?.substring(0, 10) || ""}
                       onChange={(e) =>
-                        optimisticUpdate(
-                          exp.Expense_I,
-                          "ExpenseDate",
-                          e.target.value
-                        )
+                        optimisticUpdate(id, "date", e.target.value)
                       }
                     />
-                    {cellBadge(exp.Expense_I, "ExpenseDate")}
+                    {cellBadge(id, "date")}
                   </div>
                 </td>
                 <td>
                   <div className="flex items-center">
                     <Input
                       data-cell={`${r}-1`}
-                      value={exp.Expense || ""}
+                      value={exp.description || ""}
                       onChange={(e) =>
-                        optimisticUpdate(
-                          exp.Expense_I,
-                          "Expense",
-                          e.target.value
-                        )
+                        optimisticUpdate(id, "description", e.target.value)
                       }
                     />
-                    {cellBadge(exp.Expense_I, "Expense")}
+                    {cellBadge(id, "description")}
                   </div>
                 </td>
                 <td className="w-28 text-right">
@@ -607,31 +580,31 @@ export default function ExpensesEditor() {
                       type="text"
                       step="0.01"
                       value={
-                        exp.Amount !== undefined && exp.Amount !== null
-                          ? Number(exp.Amount).toFixed(2)
+                        exp.amount !== undefined && exp.amount !== null
+                          ? Number(exp.amount).toFixed(2)
                           : ""
                       }
                       onChange={(e) => {
                         const normalized = normalizeAmountInput(e.target.value);
                         const numValue = parseFloat(normalized) || 0;
-                        optimisticUpdate(exp.Expense_I, "Amount", numValue);
+                        optimisticUpdate(id, "amount", numValue);
                       }}
                       className={
-                        exp.Amount < 0
+                        exp.amount < 0
                           ? "text-blue-600 text-right"
                           : "text-right"
                       }
                     />
-                    {cellBadge(exp.Expense_I, "Amount")}
+                    {cellBadge(id, "amount")}
                   </div>
                 </td>
                 <td>
                   <Select
-                    value={exp.PaymentMethod != null ? String(exp.PaymentMethod) : ""}
+                    value={exp.paymentMethod != null ? String(exp.paymentMethod) : ""}
                     onValueChange={(v) =>
                       optimisticUpdate(
-                        exp.Expense_I,
-                        "PaymentMethod",
+                        id,
+                        "paymentMethod",
                         v === "" ? undefined : Number(v)
                       )
                     }
@@ -648,15 +621,15 @@ export default function ExpensesEditor() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {cellBadge(exp.Expense_I, "PaymentMethod")}
+                  {cellBadge(id, "paymentMethod")}
                 </td>
                 <td>
                   <Select
-                    value={exp.Category ?? ""}
+                    value={exp.category ?? ""}
                     onValueChange={(v) =>
                       optimisticUpdate(
-                        exp.Expense_I,
-                        "Category",
+                        id,
+                        "category",
                         v === "" ? undefined : v
                       )
                     }
@@ -673,27 +646,23 @@ export default function ExpensesEditor() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {cellBadge(exp.Expense_I, "Category")}
+                  {cellBadge(id, "category")}
                 </td>
                 <td className="w-32">
                   <div className="flex items-center">
                     <Input
                       data-cell={`${r}-5`}
                       type="date"
-                      value={exp.DatePaid?.substring(0, 10) || ""}
+                      value={exp.datePaid?.substring(0, 10) || ""}
                       onChange={(e) =>
-                        optimisticUpdate(
-                          exp.Expense_I,
-                          "DatePaid",
-                          e.target.value
-                        )
+                        optimisticUpdate(id, "datePaid", e.target.value)
                       }
                     />
-                    {cellBadge(exp.Expense_I, "DatePaid")}
+                    {cellBadge(id, "datePaid")}
                   </div>
                 </td>
               </tr>
-            ))}
+            ); })}
             {/* New row placeholder - not in database until Add is clicked */}
             <tr className="border-b border-dashed bg-gray-50/70" aria-label="New expense row">
               <td className="align-middle">
@@ -711,16 +680,16 @@ export default function ExpensesEditor() {
                 <Input
                   type="date"
                   placeholder="Date"
-                  value={draftNewRow.ExpenseDate}
-                  onChange={(e) => updateDraft("ExpenseDate", e.target.value)}
+                  value={draftNewRow.date}
+                  onChange={(e) => updateDraft("date", e.target.value)}
                   className="bg-white/80 placeholder:italic"
                 />
               </td>
               <td>
                 <Input
                   placeholder="Add new expense..."
-                  value={draftNewRow.Expense}
-                  onChange={(e) => updateDraft("Expense", e.target.value)}
+                  value={draftNewRow.description}
+                  onChange={(e) => updateDraft("description", e.target.value)}
                   className="bg-white/80 placeholder:italic placeholder:text-gray-400"
                 />
               </td>
@@ -728,13 +697,13 @@ export default function ExpensesEditor() {
                 <Input
                   type="text"
                   value={
-                    draftNewRow.Amount !== 0 && !Number.isNaN(draftNewRow.Amount)
-                      ? Number(draftNewRow.Amount).toFixed(2)
+                    draftNewRow.amount !== 0 && !Number.isNaN(draftNewRow.amount)
+                      ? Number(draftNewRow.amount).toFixed(2)
                       : ""
                   }
                   onChange={(e) => {
                     const normalized = normalizeAmountInput(e.target.value);
-                    updateDraft("Amount", parseFloat(normalized) || 0);
+                    updateDraft("amount", parseFloat(normalized) || 0);
                   }}
                   placeholder="0.00"
                   className="text-right bg-white/80 placeholder:italic placeholder:text-gray-400"
@@ -742,9 +711,9 @@ export default function ExpensesEditor() {
               </td>
               <td>
                 <Select
-                  value={draftNewRow.PaymentMethod != null ? String(draftNewRow.PaymentMethod) : ""}
+                  value={draftNewRow.paymentMethod != null ? String(draftNewRow.paymentMethod) : ""}
                   onValueChange={(v) =>
-                    updateDraft("PaymentMethod", v === "" ? undefined : Number(v))
+                    updateDraft("paymentMethod", v === "" ? undefined : Number(v))
                   }
                 >
                   <SelectTrigger>
@@ -762,8 +731,8 @@ export default function ExpensesEditor() {
               </td>
               <td>
                 <Select
-                  value={draftNewRow.Category ?? ""}
-                  onValueChange={(v) => updateDraft("Category", v === "" ? undefined : v)}
+                  value={draftNewRow.category ?? ""}
+                  onValueChange={(v) => updateDraft("category", v === "" ? undefined : v)}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -781,8 +750,8 @@ export default function ExpensesEditor() {
               <td className="w-32">
                 <Input
                   type="date"
-                  value={draftNewRow.DatePaid}
-                  onChange={(e) => updateDraft("DatePaid", e.target.value)}
+                  value={draftNewRow.datePaid}
+                  onChange={(e) => updateDraft("datePaid", e.target.value)}
                   className="bg-white/80 placeholder:italic"
                 />
               </td>
@@ -812,11 +781,11 @@ export default function ExpensesEditor() {
               <label className="block text-sm font-medium mb-1">Date</label>
               <Input
                 type="date"
-                value={bulkUpdateForm.ExpenseDate || ""}
+                value={bulkUpdateForm.date || ""}
                 onChange={(e) =>
                   setBulkUpdateForm({
                     ...bulkUpdateForm,
-                    ExpenseDate: e.target.value,
+                    date: e.target.value,
                   })
                 }
                 placeholder="Leave empty to keep current"
@@ -826,11 +795,11 @@ export default function ExpensesEditor() {
             <div>
               <label className="block text-sm font-medium mb-1">Category</label>
               <Select
-                value={bulkUpdateForm.Category || ""}
+                value={bulkUpdateForm.category || ""}
                 onValueChange={(v) =>
                   setBulkUpdateForm({
                     ...bulkUpdateForm,
-                    Category: v || undefined,
+                    category: v || undefined,
                   })
                 }
               >
@@ -855,11 +824,11 @@ export default function ExpensesEditor() {
               <div className="space-y-2">
                 <Input
                   type="date"
-                  value={bulkUpdateForm.DatePaid || ""}
+                  value={bulkUpdateForm.datePaid || ""}
                   onChange={(e) =>
                     setBulkUpdateForm({
                       ...bulkUpdateForm,
-                      DatePaid: e.target.value,
+                      datePaid: e.target.value,
                       setDatePaidToNull: false,
                     })
                   }
@@ -874,9 +843,9 @@ export default function ExpensesEditor() {
                       setBulkUpdateForm({
                         ...bulkUpdateForm,
                         setDatePaidToNull: e.target.checked,
-                        DatePaid: e.target.checked
+                        datePaid: e.target.checked
                           ? undefined
-                          : bulkUpdateForm.DatePaid,
+                          : bulkUpdateForm.datePaid,
                       })
                     }
                     className="cursor-pointer"

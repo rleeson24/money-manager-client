@@ -11,7 +11,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { Expense, ExpenseFormData } from "../types/expense";
+import type { Expense } from "../types/expense";
 import "./EditExpenses.css";
 
 function EditExpenses() {
@@ -25,12 +25,14 @@ function EditExpenses() {
   const [error, setError] = useState<string | null>(null);
 
   // State for form
-  const [formData, setFormData] = useState<ExpenseFormData>({
+  const [formData, setFormData] = useState<Expense>({
     description: "",
     amount: 0,
     category: "",
     date: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD format
     notes: "",
+    datePaid: null,
+    id: 0,
   });
 
   // Load expenses on component mount
@@ -127,6 +129,8 @@ function EditExpenses() {
           category: expense.category,
           date: expense.date,
           notes: expense.notes || "",
+          datePaid: expense.datePaid || null,
+          id: expense.id,
         });
       } else {
         setError("Expense not found");
@@ -171,7 +175,7 @@ function EditExpenses() {
       setError("Amount must be greater than 0");
       return;
     }
-    if (!formData.category.trim()) {
+    if (!formData.category?.trim()) {
       setError("Category is required");
       return;
     }
@@ -208,7 +212,6 @@ function EditExpenses() {
 
         // Mock create
         const newExpense: Expense = {
-          id: Date.now().toString(),
           ...formData,
         };
         setExpenses((prev) => [...prev, newExpense]);
@@ -218,9 +221,11 @@ function EditExpenses() {
       setFormData({
         description: "",
         amount: 0,
-        category: "",
+        category: null,
         date: new Date().toISOString().split("T")[0],
         notes: "",
+        datePaid: null,
+        id: 0,
       });
 
       if (isEditMode) {
@@ -266,9 +271,11 @@ function EditExpenses() {
     setFormData({
       description: "",
       amount: 0,
-      category: "",
+      category: null,
       date: new Date().toISOString().split("T")[0],
       notes: "",
+      datePaid: null,
+      id: 0,
     });
     navigate("/expenses/edit/new");
   };
@@ -342,7 +349,7 @@ function EditExpenses() {
               <select
                 id="category"
                 name="category"
-                value={formData.category}
+                value={formData.category || -1}
                 onChange={handleInputChange}
                 required
               >

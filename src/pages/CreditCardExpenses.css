@@ -1,0 +1,287 @@
+/* =========================
+   Base Table Styling
+   ========================= */
+
+.expenses-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.expenses-table th {
+  text-align: left;
+  padding: 8px;
+  font-weight: 600;
+  background-color: #fafafa;
+  border-bottom: 2px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  user-select: none;
+}
+
+.expenses-table th.cursor-pointer {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.expenses-table th.cursor-pointer:hover {
+  background-color: #f0f0f0;
+}
+
+.expenses-table td {
+  padding: 6px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+.expenses-table td:first-child,
+.expenses-table th:first-child {
+  width: 40px;
+  text-align: center;
+}
+
+/* Zebra striping */
+.expenses-table tbody tr:nth-child(even) {
+  background-color: #fcfcfc;
+}
+
+/* Hover row */
+.expenses-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* =========================
+   Input & Cell Behavior
+   ========================= */
+
+.expenses-table input,
+.expenses-table button,
+.expenses-table [role="combobox"] {
+  width: 100%;
+}
+
+.expenses-table input:focus,
+.expenses-table [role="combobox"]:focus-within {
+  outline: 2px solid #2563eb;
+  outline-offset: -1px;
+  background-color: #eff6ff;
+}
+
+/* =========================
+   Spreadsheet Navigation
+   ========================= */
+
+[data-cell] {
+  position: relative;
+}
+
+[data-cell]:focus-within {
+  box-shadow: inset 0 0 0 2px #2563eb;
+  border-radius: 4px;
+}
+
+/* =========================
+   Validation Badges
+   ========================= */
+
+.cell-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cell-badge {
+  font-size: 0.75rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.cell-badge.unsaved {
+  color: #ca8a04; /* amber-600 */
+}
+
+.cell-badge.error {
+  color: #dc2626; /* red-600 */
+}
+
+/* Shake animation for error */
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  50% {
+    transform: translateX(2px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.cell-error {
+  animation: shake 0.25s ease-in-out;
+}
+
+/* =========================
+   Category Coloring
+   ========================= */
+
+.category-cell {
+  transition: background-color 0.15s ease-in-out;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+/* Ensures readable text on colored background */
+.category-cell select,
+.category-cell [role="combobox"] {
+  background-color: rgba(255, 255, 255, 0.75);
+}
+
+/* =========================
+   Row Controls
+   ========================= */
+
+.row-delete-btn {
+  color: #9ca3af;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.row-delete-btn:hover {
+  color: #dc2626;
+}
+
+/* =========================
+   Header & Footer
+   ========================= */
+
+.expenses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #e5e7eb;
+}
+
+.error-message {
+  padding: 0.75rem;
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.expenses-legend {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+/* =========================
+   Dialog (Split Expense)
+   ========================= */
+
+.split-dialog-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.split-dialog-row input {
+  flex: 1;
+}
+
+.split-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* =========================
+   Bulk Update Dialog
+   ========================= */
+
+.bulk-update-dialog {
+  max-width: 500px;
+}
+
+.bulk-update-dialog .form-group {
+  margin-bottom: 1rem;
+}
+
+.bulk-update-dialog label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.bulk-update-dialog .checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.bulk-update-dialog .checkbox-group input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+}
+
+/* =========================
+   Bulk Update Button Area
+   ========================= */
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.bulk-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.selection-count {
+  font-size: 0.875rem;
+  color: #6b7280;
+}

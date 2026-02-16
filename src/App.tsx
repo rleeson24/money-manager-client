@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import EditExpenses from "./pages/EditExpenses";
 import ChatGPTEditExpenses from "./pages/ChatGPTEditExpenses";
+import CreditCardExpenses from "./pages/CreditCardExpenses";
 import "./App.css";
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/expenses/edit" element={<EditExpenses />} />
         <Route path="/expenses/chatgptedit" element={<ChatGPTEditExpenses />} />
+        <Route path="/expenses/creditcard" element={<CreditCardExpenses />} />
         <Route path="/expenses/edit/:id" element={<EditExpenses />} />
         <Route path="/expenses/edit/new" element={<EditExpenses />} />
       </Routes>
