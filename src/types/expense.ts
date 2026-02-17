@@ -12,4 +12,7 @@ export interface Expense {
   notes?: string | null
   paymentMethod?: number | null
   datePaid?: string | null // When the expense was paid (e.g. credit card payoff)
+  /** Server-set; used for optimistic concurrency on update */
+  createdDateTime?: string
+  modifiedDateTime?: string
 }

@@ -16,7 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/chatGPTUIComponents";
-import { getExpenses, updateExpense, bulkUpdateExpenses, bulkDeleteExpenses } from "../services/expenseService";
+import { getExpenses, updateExpense, bulkUpdateExpenses, bulkDeleteExpenses, UpdateConflictError } from "../services/expenseService";
+import Swal from "sweetalert2";
 import type { Expense } from "../types/expense";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
@@ -72,7 +73,7 @@ export default function ExpensesEditor() {
   const patchDebounceRef = useRef<
     Record<
       string,
-      ((id: number, field: string, value: string | number | null | undefined) => void) & {
+      ((id: number, field: string, value: string | number | null | undefined, exp: Expense) => void) & {
         cancel(): void;
       }
     >
@@ -159,39 +160,73 @@ export default function ExpensesEditor() {
     return cleaned;
   }
 
-  function optimisticUpdate(id: number, field: string, value: string | number | null | undefined) {
+  function optimisticUpdate(expense: Expense, field: string, value: string | number | null | undefined) {
+    const id = expIdNum(expense);
     undoStack.current.push([...expenses]);
 
     setDirtyCells((d) => ({ ...d, [`${id}-${field}`]: true }));
     setErrorCells((e) => ({ ...e, [`${id}-${field}`]: false }));
 
-    const idNum = (xId: string | number) => (typeof xId === "number" ? xId : parseInt(String(xId), 10));
     setExpenses((prev) =>
-      prev.map((x) => (idNum(x.id) === id ? { ...x, [field]: value } : x))
+      prev.map((x) => (expIdNum(x) === id ? { ...x, [field]: value } : x))
     );
 
     type PatchFn = ((
       patchId: number,
       patchField: string,
-      patchValue: string | number | null | undefined
+      patchValue: string | number | null | undefined,
+      exp: Expense
     ) => void) & { cancel(): void };
     const key = `${id}-${field}`;
     if (!patchDebounceRef.current[key]) {
       patchDebounceRef.current[key] = debounce(
-        (patchId: number, patchField: string, patchValue: string | number | null | undefined) => {
-          const payload: Partial<Expense> = { [patchField]: patchValue === undefined || patchValue === null ? undefined : patchValue };
+        (patchId: number, patchField: string, patchValue: string | number | null | undefined, exp: Expense) => {
+          const payload: Partial<Expense> = {
+            [patchField]: patchValue === undefined || patchValue === null ? undefined : patchValue,
+            modifiedDateTime: exp.modifiedDateTime,
+          };
           updateExpense(patchId, payload)
-            .then(() => {
+            .then((updated) => {
+              setExpenses((prev) => prev.map((x) => (expIdNum(x) !== patchId ? x : updated)));
               setDirtyCells((d) => ({ ...d, [`${patchId}-${patchField}`]: false }));
+              setErrorCells((e) => ({ ...e, [`${patchId}-${patchField}`]: false }));
             })
-            .catch(() => {
-              setErrorCells((e) => ({ ...e, [`${patchId}-${patchField}`]: true }));
+            .catch((err) => {
+              if (err instanceof UpdateConflictError) {
+                Swal.fire({
+                  title: "Conflict",
+                  text: "This expense has been updated already. Do you want to overwrite?",
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonText: "Yes",
+                  cancelButtonText: "No",
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    updateExpense(patchId, {
+                      [patchField]: patchValue === undefined || patchValue === null ? undefined : patchValue,
+                      modifiedDateTime: err.currentExpense.modifiedDateTime,
+                    })
+                      .then((updated) => {
+                        setExpenses((prev) => prev.map((x) => (expIdNum(x) !== patchId ? x : updated)));
+                        setDirtyCells((d) => ({ ...d, [`${patchId}-${patchField}`]: false }));
+                        setErrorCells((e) => ({ ...e, [`${patchId}-${patchField}`]: false }));
+                      })
+                      .catch(() => setErrorCells((e) => ({ ...e, [`${patchId}-${patchField}`]: true })));
+                  } else {
+                    setExpenses((prev) => prev.map((x) => (expIdNum(x) !== patchId ? x : err.currentExpense)));
+                    setDirtyCells((d) => ({ ...d, [`${patchId}-${patchField}`]: false }));
+                    setErrorCells((e) => ({ ...e, [`${patchId}-${patchField}`]: false }));
+                  }
+                });
+              } else {
+                setErrorCells((e) => ({ ...e, [`${patchId}-${patchField}`]: true }));
+              }
             });
         },
         1000
       ) as PatchFn;
     }
-    patchDebounceRef.current[key](id, field, value);
+    patchDebounceRef.current[key](id, field, value, expense);
   }
 
   function expIdNum(exp: Expense): number {
@@ -555,7 +590,7 @@ export default function ExpensesEditor() {
                       type="date"
                       value={exp.date?.substring(0, 10) || ""}
                       onChange={(e) =>
-                        optimisticUpdate(id, "date", e.target.value)
+                        optimisticUpdate(exp, "date", e.target.value)
                       }
                     />
                     {cellBadge(id, "date")}
@@ -567,7 +602,7 @@ export default function ExpensesEditor() {
                       data-cell={`${r}-1`}
                       value={exp.description || ""}
                       onChange={(e) =>
-                        optimisticUpdate(id, "description", e.target.value)
+                        optimisticUpdate(exp, "description", e.target.value)
                       }
                     />
                     {cellBadge(id, "description")}
@@ -587,7 +622,7 @@ export default function ExpensesEditor() {
                       onChange={(e) => {
                         const normalized = normalizeAmountInput(e.target.value);
                         const numValue = parseFloat(normalized) || 0;
-                        optimisticUpdate(id, "amount", numValue);
+                        optimisticUpdate(exp, "amount", numValue);
                       }}
                       className={
                         exp.amount < 0
@@ -603,7 +638,7 @@ export default function ExpensesEditor() {
                     value={exp.paymentMethod != null ? String(exp.paymentMethod) : ""}
                     onValueChange={(v) =>
                       optimisticUpdate(
-                        id,
+                        exp,
                         "paymentMethod",
                         v === "" ? undefined : Number(v)
                       )
@@ -628,7 +663,7 @@ export default function ExpensesEditor() {
                     value={exp.category ?? ""}
                     onValueChange={(v) =>
                       optimisticUpdate(
-                        id,
+                        exp,
                         "category",
                         v === "" ? undefined : v
                       )
@@ -655,7 +690,7 @@ export default function ExpensesEditor() {
                       type="date"
                       value={exp.datePaid?.substring(0, 10) || ""}
                       onChange={(e) =>
-                        optimisticUpdate(id, "datePaid", e.target.value)
+                        optimisticUpdate(exp, "datePaid", e.target.value)
                       }
                     />
                     {cellBadge(id, "datePaid")}
