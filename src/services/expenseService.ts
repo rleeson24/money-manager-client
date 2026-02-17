@@ -72,6 +72,9 @@ const mockExpenses: ApiExpense[] = [
   { Expense_I: 9, ExpenseDate: "2026-01-28T00:00:00", Expense: "Outdoor Equipment", Amount: 89.25, PaymentMethod: 1, Category: "Outdoors (Parent)", DatePaid: undefined, CreatedDateTime: "2026-01-28T12:00:00Z", ModifiedDateTime: "2026-01-28T12:00:00Z" },
 ];
 
+/** When mocking conflict, remember the server modified we sent so "Yes" retry can succeed */
+let lastMockConflictModified: string | null = null;
+
 export type { Expense };
 
 /**
@@ -120,12 +123,15 @@ export async function getExpense(id: number): Promise<Expense | null> {
   return Promise.resolve(api ? toExpense(api) : null);
 }
 
+/** Set true to simulate 409 conflict on every first update (mock path) for quick testing. Set false for production. */
+const MOCK_CONFLICT_FOR_TEST = true;
+
 /**
  * Update an expense (PATCH). Uses real API when API_BASE is set or when using relative /api.
  * On 409 Conflict, throws UpdateConflictError with the current expense from the server.
  */
 export async function updateExpense(id: number, updates: Partial<Expense>): Promise<Expense> {
-  const useRealApi = typeof fetch !== "undefined";
+  const useRealApi = typeof fetch !== "undefined" && !MOCK_CONFLICT_FOR_TEST;
   if (useRealApi) {
     try {
       const headers = await getAuthHeaders();
@@ -151,6 +157,27 @@ export async function updateExpense(id: number, updates: Partial<Expense>): Prom
   // Mock path
   const index = mockExpenses.findIndex((exp) => exp.Expense_I === id);
   if (index === -1) throw new Error("Expense not found");
+
+  // Simulate 409 conflict for quick testing: throw on first attempt, succeed when retry sends server's modifiedDateTime
+  if (MOCK_CONFLICT_FOR_TEST) {
+    const currentFromServer = toExpense(mockExpenses[index]);
+    // If caller sent modifiedDateTime matching the one we last sent in a conflict, treat as "Yes" retry and succeed
+    if (updates.modifiedDateTime && lastMockConflictModified && updates.modifiedDateTime === lastMockConflictModified) {
+      lastMockConflictModified = null;
+      const apiUpdates = partialToApi(updates);
+      mockExpenses[index] = { ...mockExpenses[index], ...apiUpdates, ModifiedDateTime: new Date().toISOString() };
+      return Promise.resolve(toExpense(mockExpenses[index]));
+    }
+    const serverModified = new Date(Date.now() - 60000).toISOString(); // 1 min ago
+    lastMockConflictModified = serverModified;
+    const conflictRecord: Expense = {
+      ...currentFromServer,
+      modifiedDateTime: serverModified,
+      description: currentFromServer.description + " (updated elsewhere)",
+    };
+    throw new UpdateConflictError("Expense was updated by someone else.", conflictRecord);
+  }
+
   const apiUpdates = partialToApi(updates);
   mockExpenses[index] = { ...mockExpenses[index], ...apiUpdates };
   return Promise.resolve(toExpense(mockExpenses[index]));
