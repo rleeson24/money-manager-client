@@ -58,10 +58,10 @@ export default function CreditCardExpenses() {
           pm.PaymentMethod.toLowerCase() === "discover"
         );
         if (discover) {
-          setSelectedPaymentMethod(discover.ID);
+          setSelectedPaymentMethod(discover.id);
         } else if (data.length > 0) {
           // Fallback to first payment method if Discover not found
-          setSelectedPaymentMethod(data[0].ID);
+          setSelectedPaymentMethod(data[0].id);
         }
       } catch (err) {
         console.error("Error loading payment methods:", err);
@@ -208,8 +208,8 @@ export default function CreditCardExpenses() {
       }
 
       if (sortColumn === "category") {
-        const aName = (a.category != null ? categories.find((c) => c.Category_I === a.category)?.Name : null) ?? "";
-        const bName = (b.category != null ? categories.find((c) => c.Category_I === b.category)?.Name : null) ?? "";
+        const aName = (a.category != null ? categories.find((c) => c.category_I === a.category)?.name : null) ?? "";
+        const bName = (b.category != null ? categories.find((c) => c.category_I === b.category)?.name : null) ?? "";
         const aStr = aName.toLowerCase();
         const bStr = bName.toLowerCase();
         if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
@@ -310,7 +310,7 @@ export default function CreditCardExpenses() {
                   </SelectTrigger>
                   <SelectContent>
                     {paymentMethods.map((pm) => (
-                      <SelectItem key={pm.ID} value={pm.ID.toString()}>
+                      <SelectItem key={pm.id} value={pm.id.toString()}>
                         {pm.PaymentMethod}
                       </SelectItem>
                     ))}
@@ -440,8 +440,8 @@ export default function CreditCardExpenses() {
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((c) => (
-                            <SelectItem key={c.Category_I} value={String(c.Category_I)}>
-                              {c.Name}
+                            <SelectItem key={c.category_I} value={String(c.category_I)}>
+                              {c.name}
                             </SelectItem>
                           ))}
                         </SelectContent>

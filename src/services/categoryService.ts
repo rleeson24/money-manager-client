@@ -1,53 +1,52 @@
-// Type definitions
+import { USE_API, API_BASE } from "../config/api";
+
 export interface Category {
-  Category_I: number;
-  Name: string;
+  category_I: number;
+  name: string;
 }
 
-// Mock data for categories
 const mockCategories: Category[] = [
-  { Category_I: 1, Name: "Other Expenses (Pare)" },
-  { Category_I: 2, Name: "Dining/Eating Out" },
-  { Category_I: 3, Name: "Special Occasions (P)" },
-  { Category_I: 4, Name: "Gas - Auto" },
-  { Category_I: 5, Name: "Health" },
-  { Category_I: 6, Name: "Groceries (Parent)" },
-  { Category_I: 7, Name: "Outdoors (Parent)" },
-  { Category_I: 8, Name: "Gifts (Parent)" },
-  { Category_I: 9, Name: "Transportation" },
-  { Category_I: 10, Name: "Entertainment" },
-  { Category_I: 11, Name: "Utilities" },
-  { Category_I: 12, Name: "Healthcare" },
-  { Category_I: 13, Name: "Shopping" },
-  { Category_I: 14, Name: "Health & Fitness" },
-  { Category_I: 15, Name: "Housing" },
-  { Category_I: 16, Name: "Education" },
-  { Category_I: 17, Name: "Food" },
+  { category_I: 1, name: "Other Expenses (Pare)" },
+  { category_I: 2, name: "Dining/Eating Out" },
+  { category_I: 3, name: "Special Occasions (P)" },
+  { category_I: 4, name: "Gas - Auto" },
+  { category_I: 5, name: "Health" },
+  { category_I: 6, name: "Groceries (Parent)" },
+  { category_I: 7, name: "Outdoors (Parent)" },
+  { category_I: 8, name: "Gifts (Parent)" },
+  { category_I: 9, name: "Transportation" },
+  { category_I: 10, name: "Entertainment" },
+  { category_I: 11, name: "Utilities" },
+  { category_I: 12, name: "Healthcare" },
+  { category_I: 13, name: "Shopping" },
+  { category_I: 14, name: "Health & Fitness" },
+  { category_I: 15, name: "Housing" },
+  { category_I: 16, name: "Education" },
+  { category_I: 17, name: "Food" },
 ];
 
 /**
- * Get all categories
+ * Get all categories.
+ * When USE_API: GET /api/categories
  */
 export async function getCategories(): Promise<Category[]> {
-  // TODO: Replace with actual API call
-  // const response = await fetch("/api/categories");
-  // if (!response.ok) throw new Error("Failed to fetch categories");
-  // return response.json();
-
-  // Mock implementation
-  return Promise.resolve([...mockCategories]);
+  if (USE_API) {
+    const res = await fetch(`${API_BASE}/api/categories`, { credentials: "include", headers: { "Content-Type": "application/json" } });
+    if (!res.ok) throw new Error("Failed to fetch categories");
+    const data = (await res.json()) as Category[];
+    return Array.isArray(data) ? data : [];
+  }
+  return [...mockCategories];
 }
 
 /**
- * Get a category by ID
+ * Get a category by ID.
+ * When USE_API: fetches all and finds by id (API has no single-get). Otherwise uses mock.
  */
 export async function getCategory(id: number): Promise<Category | null> {
-  // TODO: Replace with actual API call
-  // const response = await fetch(`/api/categories/${id}`);
-  // if (!response.ok) throw new Error("Failed to fetch category");
-  // return response.json();
-
-  // Mock implementation
-  const category = mockCategories.find((c) => c.Category_I === id);
-  return Promise.resolve(category || null);
+  if (USE_API) {
+    const all = await getCategories();
+    return all.find((c) => c.category_I === id) ?? null;
+  }
+  return mockCategories.find((c) => c.category_I === id) ?? null;
 }

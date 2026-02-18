@@ -1,3 +1,4 @@
+import { USE_API, API_BASE } from "../config/api";
 import type { Expense } from "../types/expense";
 
 /** Thrown when the server returns 409 Conflict (expense was already updated). */
@@ -13,72 +14,72 @@ export class UpdateConflictError extends Error {
 
 /** API response shape (Expense_I, ExpenseDate, etc.) */
 interface ApiExpense {
-  Expense_I: number;
-  ExpenseDate: string;
-  Expense: string;
-  Amount: number;
-  PaymentMethod?: number;
-  Category?: number;
-  DatePaid?: string;
-  CreatedDateTime?: string;
-  ModifiedDateTime?: string;
+  expense_I: number;
+  expenseDate: string;
+  expense: string;
+  amount: number;
+  paymentMethod?: number;
+  category?: number;
+  datePaid?: string;
+  createdDateTime?: string;
+  modifiedDateTime?: string;
 }
 
 function toExpense(api: ApiExpense): Expense {
   return {
-    id: api.Expense_I,
-    date: api.ExpenseDate,
-    description: api.Expense,
-    amount: api.Amount,
-    paymentMethod: api.PaymentMethod ?? null,
-    category: api.Category ?? null,
-    datePaid: api.DatePaid ?? null,
-    createdDateTime: api.CreatedDateTime,
-    modifiedDateTime: api.ModifiedDateTime,
+    id: api.expense_I,
+    date: api.expenseDate,
+    description: api.expense,
+    amount: api.amount,
+    paymentMethod: api.paymentMethod ?? null,
+    category: api.category ?? null,
+    datePaid: api.datePaid ?? null,
+    createdDateTime: api.createdDateTime,
+    modifiedDateTime: api.modifiedDateTime,
   };
 }
 
-function partialToApi(updates: Partial<Expense>): Partial<ApiExpense> {
-  const api: Partial<ApiExpense> = {};
-  if (updates.id !== undefined) api.Expense_I = typeof updates.id === "string" ? parseInt(updates.id, 10) : updates.id;
-  if (updates.date !== undefined) api.ExpenseDate = updates.date;
-  if (updates.description !== undefined) api.Expense = updates.description;
-  if (updates.amount !== undefined) api.Amount = updates.amount;
-  if (updates.paymentMethod !== undefined) api.PaymentMethod = updates.paymentMethod ?? undefined;
-  if (updates.category !== undefined) api.Category = updates.category ?? undefined;
-  if (updates.datePaid !== undefined) api.DatePaid = updates.datePaid ?? undefined;
-  if (updates.createdDateTime !== undefined) api.CreatedDateTime = updates.createdDateTime;
-  if (updates.modifiedDateTime !== undefined) api.ModifiedDateTime = updates.modifiedDateTime;
-  return api;
+function expenseToApiBody(expense: Omit<Expense, "id"> | Partial<Expense>): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  if ("date" in expense && expense.date !== undefined) body.ExpenseDate = expense.date;
+  if ("description" in expense && expense.description !== undefined) body.Expense = expense.description;
+  if ("amount" in expense && expense.amount !== undefined) body.Amount = expense.amount;
+  if ("paymentMethod" in expense && expense.paymentMethod !== undefined) body.PaymentMethod = expense.paymentMethod;
+  if ("category" in expense && expense.category !== undefined) body.Category = expense.category;
+  if ("datePaid" in expense && expense.datePaid !== undefined) body.DatePaid = expense.datePaid;
+  if ("createdDateTime" in expense && expense.createdDateTime !== undefined) body.CreatedDateTime = expense.createdDateTime;
+  if ("modifiedDateTime" in expense && expense.modifiedDateTime !== undefined) body.ModifiedDateTime = expense.modifiedDateTime;
+  return body;
 }
 
-const API_BASE = "";
-
-async function getAuthHeaders(): Promise<HeadersInit> {
-  // Use same auth as your app (e.g. from MSAL or cookie). Adjust as needed.
-  return { "Content-Type": "application/json" };
+async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+  return fetch(`${API_BASE}${path}`, { ...options, credentials: "include", headers });
 }
 
-// Mock data in API shape (include timestamps for concurrency)
+// ---------- Mock data (used when USE_API is false) ----------
 const mockExpenses: ApiExpense[] = [
-  { Expense_I: 1, ExpenseDate: "2026-01-19T00:00:00", Expense: "COPA AIRLINES PANAMA PAN", Amount: 126.34, PaymentMethod: 1, Category: 1, DatePaid: undefined, CreatedDateTime: "2026-01-19T12:00:00Z", ModifiedDateTime: "2026-01-19T12:00:00Z" },
-  { Expense_I: 2, ExpenseDate: "2026-01-22T00:00:00", Expense: "Freddy's - custard", Amount: 5.51, PaymentMethod: 1, Category: 2, DatePaid: undefined, CreatedDateTime: "2026-01-22T12:00:00Z", ModifiedDateTime: "2026-01-22T12:00:00Z" },
-  { Expense_I: 3, ExpenseDate: "2026-01-22T00:00:00", Expense: "WALMART.COM - David birthday present - couch", Amount: 83.30, PaymentMethod: 1, Category: 3, DatePaid: undefined, CreatedDateTime: "2026-01-22T12:00:00Z", ModifiedDateTime: "2026-01-22T12:00:00Z" },
-  { Expense_I: 4, ExpenseDate: "2026-01-23T00:00:00", Expense: "Gas Station", Amount: 45.0, PaymentMethod: 1, Category: 4, DatePaid: undefined, CreatedDateTime: "2026-01-23T12:00:00Z", ModifiedDateTime: "2026-01-23T12:00:00Z" },
-  { Expense_I: 5, ExpenseDate: "2026-01-24T00:00:00", Expense: "Ross - return lita shoes", Amount: 21.79, PaymentMethod: 1, Category: 1, DatePaid: undefined, CreatedDateTime: "2026-01-24T12:00:00Z", ModifiedDateTime: "2026-01-24T12:00:00Z" },
-  { Expense_I: 6, ExpenseDate: "2026-01-25T00:00:00", Expense: "AMAZON - Luca Christmas gift", Amount: 15.99, PaymentMethod: 1, Category: 8, DatePaid: undefined, CreatedDateTime: "2026-01-25T12:00:00Z", ModifiedDateTime: "2026-01-25T12:00:00Z" },
-  { Expense_I: 7, ExpenseDate: "2026-01-26T00:00:00", Expense: "Pharmacy - Prescription", Amount: 32.5, PaymentMethod: 1, Category: 5, DatePaid: undefined, CreatedDateTime: "2026-01-26T12:00:00Z", ModifiedDateTime: "2026-01-26T12:00:00Z" },
-  { Expense_I: 8, ExpenseDate: "2026-01-27T00:00:00", Expense: "Groceries - Whole Foods", Amount: 125.5, PaymentMethod: 1, Category: 6, DatePaid: undefined, CreatedDateTime: "2026-01-27T12:00:00Z", ModifiedDateTime: "2026-01-27T12:00:00Z" },
-  { Expense_I: 9, ExpenseDate: "2026-01-28T00:00:00", Expense: "Outdoor Equipment", Amount: 89.25, PaymentMethod: 1, Category: 7, DatePaid: undefined, CreatedDateTime: "2026-01-28T12:00:00Z", ModifiedDateTime: "2026-01-28T12:00:00Z" },
+  { expense_I: 1, expenseDate: "2026-01-19T00:00:00", expense: "COPA AIRLINES PANAMA PAN", amount: 126.34, paymentMethod: 1, category: 1, datePaid: undefined, createdDateTime: "2026-01-19T12:00:00Z", modifiedDateTime: "2026-01-19T12:00:00Z" },
+  { expense_I: 2, expenseDate: "2026-01-22T00:00:00", expense: "Freddy's - custard", amount: 5.51, paymentMethod: 1, category: 2, datePaid: undefined, createdDateTime: "2026-01-22T12:00:00Z", modifiedDateTime: "2026-01-22T12:00:00Z" },
+  { expense_I: 3, expenseDate: "2026-01-22T00:00:00", expense: "WALMART.COM - David birthday present - couch", amount: 83.30, paymentMethod: 1, category: 3, datePaid: undefined, createdDateTime: "2026-01-22T12:00:00Z", modifiedDateTime: "2026-01-22T12:00:00Z" },
+  { expense_I: 4, expenseDate: "2026-01-23T00:00:00", expense: "Gas Station", amount: 45.0, paymentMethod: 1, category: 4, datePaid: undefined, createdDateTime: "2026-01-23T12:00:00Z", modifiedDateTime: "2026-01-23T12:00:00Z" },
+  { expense_I: 5, expenseDate: "2026-01-24T00:00:00", expense: "Ross - return lita shoes", amount: 21.79, paymentMethod: 1, category: 1, datePaid: undefined, createdDateTime: "2026-01-24T12:00:00Z", modifiedDateTime: "2026-01-24T12:00:00Z" },
+  { expense_I: 6, expenseDate: "2026-01-25T00:00:00", expense: "AMAZON - Luca Christmas gift", amount: 15.99, paymentMethod: 1, category: 8, datePaid: undefined, createdDateTime: "2026-01-25T12:00:00Z", modifiedDateTime: "2026-01-25T12:00:00Z" },
+  { expense_I: 7, expenseDate: "2026-01-26T00:00:00", expense: "Pharmacy - Prescription", amount: 32.5, paymentMethod: 1, category: 5, datePaid: undefined, createdDateTime: "2026-01-26T12:00:00Z", modifiedDateTime: "2026-01-26T12:00:00Z" },
+  { expense_I: 8, expenseDate: "2026-01-27T00:00:00", expense: "Groceries - Whole Foods", amount: 125.5, paymentMethod: 1, category: 6, datePaid: undefined, createdDateTime: "2026-01-27T12:00:00Z", modifiedDateTime: "2026-01-27T12:00:00Z" },
+  { expense_I: 9, expenseDate: "2026-01-28T00:00:00", expense: "Outdoor Equipment", amount: 89.25, paymentMethod: 1, category: 7, datePaid: undefined, createdDateTime: "2026-01-28T12:00:00Z", modifiedDateTime: "2026-01-28T12:00:00Z" },
 ];
 
-/** When mocking conflict, remember the server modified we sent so "Yes" retry can succeed */
 let lastMockConflictModified: string | null = null;
 
 export type { Expense };
 
 /**
- * Get expenses with optional filters
+ * Get expenses with optional filters.
+ * When USE_API: GET /api/expenses (month, paymentMethod, datePaidNull). Search is applied client-side if provided.
  */
 export async function getExpenses(params?: {
   month?: string;
@@ -86,149 +87,202 @@ export async function getExpenses(params?: {
   paymentMethod?: number;
   datePaidNull?: boolean;
 }): Promise<Expense[]> {
+  if (USE_API) {
+    const searchParams = new URLSearchParams();
+    if (params?.month) searchParams.set("month", params.month);
+    if (params?.paymentMethod != null) searchParams.set("paymentMethod", String(params.paymentMethod));
+    if (params?.datePaidNull != null) searchParams.set("datePaidNull", String(params.datePaidNull));
+    const qs = searchParams.toString();
+    const res = await apiFetch(`/api/expenses${qs ? `?${qs}` : ""}`);
+    if (!res.ok) throw new Error(`Failed to fetch expenses: ${res.status}`);
+    const data = (await res.json()) as ApiExpense[];
+    let list = (Array.isArray(data) ? data : []).map(toExpense);
+    if (params?.search?.trim()) {
+      const term = params.search.trim().toLowerCase();
+      list = list.filter(
+        (exp) =>
+          (exp.description && exp.description.toLowerCase().includes(term)) ||
+          (exp.category != null && String(exp.category).includes(term)) ||
+          (exp.amount != null && String(exp.amount).includes(term))
+      );
+    }
+    return list;
+  }
+
   let filtered = [...mockExpenses];
-
-  if (params?.month) {
-    filtered = filtered.filter((exp) => {
-      const expMonth = exp.ExpenseDate.substring(0, 7);
-      return expMonth === params.month;
-    });
-  }
-
-  if (params?.paymentMethod) {
-    filtered = filtered.filter((exp) => exp.PaymentMethod === params.paymentMethod);
-  }
-
-  if (params?.datePaidNull) {
-    filtered = filtered.filter((exp) => exp.DatePaid === undefined || exp.DatePaid === null);
-  }
-
-  if (params?.search) {
+  if (params?.month) filtered = filtered.filter((exp) => exp.expenseDate.substring(0, 7) === params.month);
+  if (params?.paymentMethod != null) filtered = filtered.filter((exp) => exp.paymentMethod === params.paymentMethod);
+  if (params?.datePaidNull) filtered = filtered.filter((exp) => exp.datePaid == null);
+  if (params?.search?.trim()) {
     const term = params.search.trim().toLowerCase();
-    filtered = filtered.filter((exp) =>
-      (exp.Expense && exp.Expense.toLowerCase().includes(term)) ||
-      (exp.Category !== undefined && exp.Category !== null && exp.Category.toString().includes(term)) ||
-      (exp.Amount !== undefined && exp.Amount.toString().includes(term))
+    filtered = filtered.filter(
+      (exp) =>
+        (exp.expense && exp.expense.toLowerCase().includes(term)) ||
+        (exp.category != null && exp.category.toString().includes(term)) ||
+        (exp.amount != null && exp.amount.toString().includes(term))
     );
   }
-
-  return Promise.resolve(filtered.map(toExpense));
+  return filtered.map(toExpense);
 }
 
 /**
- * Get a single expense by ID
+ * Get a single expense by ID.
+ * When USE_API: GET /api/expenses/{id}
  */
 export async function getExpense(id: number): Promise<Expense | null> {
-  const api = mockExpenses.find((exp) => exp.Expense_I === id);
-  return Promise.resolve(api ? toExpense(api) : null);
+  if (USE_API) {
+    const res = await apiFetch(`/api/expenses/${id}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`Failed to fetch expense: ${res.status}`);
+    const data = (await res.json()) as ApiExpense;
+    return toExpense(data);
+  }
+  const api = mockExpenses.find((exp) => exp.expense_I === id);
+  return api ? toExpense(api) : null;
 }
 
-/** Set true to simulate 409 conflict on every first update (mock path) for quick testing. Set false for production. */
-const MOCK_CONFLICT_FOR_TEST = true;
-
 /**
- * Update an expense (PATCH). Uses real API when API_BASE is set or when using relative /api.
- * On 409 Conflict, throws UpdateConflictError with the current expense from the server.
+ * Update an expense (PATCH).
+ * When USE_API: PATCH /api/expenses/{id}. On 409, throws UpdateConflictError with current expense.
  */
 export async function updateExpense(id: number, updates: Partial<Expense>): Promise<Expense> {
-  const useRealApi = typeof fetch !== "undefined" && !MOCK_CONFLICT_FOR_TEST;
-  if (useRealApi) {
-    try {
-      const headers = await getAuthHeaders();
-      const body = partialToApi(updates);
-      const res = await fetch(`${API_BASE}/api/expenses/${id}`, {
-        method: "PATCH",
-        headers: headers as Record<string, string>,
-        body: JSON.stringify(body),
-        credentials: "include",
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.status === 409 && data.Expense_I != null) {
-        throw new UpdateConflictError("Expense was updated by someone else.", toExpense(data as ApiExpense));
-      }
-      if (!res.ok) throw new Error(data?.title || `Update failed: ${res.status}`);
-      return toExpense(data as ApiExpense);
-    } catch (e) {
-      if (e instanceof UpdateConflictError) throw e;
-      throw e;
+  if (USE_API) {
+    const body = expenseToApiBody(updates);
+    const res = await apiFetch(`/api/expenses/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+    const data = (await res.json()) as ApiExpense & { title?: string };
+    if (res.status === 409 && data.expense_I != null) {
+      throw new UpdateConflictError("Expense was updated by someone else.", toExpense(data as ApiExpense));
     }
+    if (!res.ok) throw new Error(data?.title ?? `Update failed: ${res.status}`);
+    return toExpense(data as ApiExpense);
   }
 
-  // Mock path
-  const index = mockExpenses.findIndex((exp) => exp.Expense_I === id);
+  const index = mockExpenses.findIndex((exp) => exp.expense_I === id);
   if (index === -1) throw new Error("Expense not found");
-
-  // Simulate 409 conflict for quick testing: throw on first attempt, succeed when retry sends server's modifiedDateTime
-  if (MOCK_CONFLICT_FOR_TEST) {
-    const currentFromServer = toExpense(mockExpenses[index]);
-    // If caller sent modifiedDateTime matching the one we last sent in a conflict, treat as "Yes" retry and succeed
-    if (updates.modifiedDateTime && lastMockConflictModified && updates.modifiedDateTime === lastMockConflictModified) {
-      lastMockConflictModified = null;
-      const apiUpdates = partialToApi(updates);
-      mockExpenses[index] = { ...mockExpenses[index], ...apiUpdates, ModifiedDateTime: new Date().toISOString() };
-      return Promise.resolve(toExpense(mockExpenses[index]));
-    }
-    const serverModified = new Date(Date.now() - 60000).toISOString(); // 1 min ago
+  if (updates.modifiedDateTime && lastMockConflictModified && updates.modifiedDateTime === lastMockConflictModified) {
+    lastMockConflictModified = null;
+    Object.assign(mockExpenses[index], {
+      expenseDate: updates.date ?? mockExpenses[index].expenseDate,
+      expense: updates.description ?? mockExpenses[index].expense,
+      amount: updates.amount ?? mockExpenses[index].amount,
+      paymentMethod: updates.paymentMethod ?? mockExpenses[index].paymentMethod,
+      category: updates.category ?? mockExpenses[index].category,
+      datePaid: updates.datePaid ?? mockExpenses[index].datePaid,
+      modifiedDateTime: new Date().toISOString(),
+    });
+    return toExpense(mockExpenses[index]);
+  }
+  // Optional: set to true to simulate 409 on first update for testing
+  const mockConflictForTest = false;
+  if (mockConflictForTest) {
+    const serverModified = new Date(Date.now() - 60000).toISOString();
     lastMockConflictModified = serverModified;
-    const conflictRecord: Expense = {
+    const currentFromServer = toExpense(mockExpenses[index]);
+    throw new UpdateConflictError("Expense was updated by someone else.", {
       ...currentFromServer,
       modifiedDateTime: serverModified,
       description: currentFromServer.description + " (updated elsewhere)",
-    };
-    throw new UpdateConflictError("Expense was updated by someone else.", conflictRecord);
+    });
   }
-
-  const apiUpdates = partialToApi(updates);
-  mockExpenses[index] = { ...mockExpenses[index], ...apiUpdates };
-  return Promise.resolve(toExpense(mockExpenses[index]));
+  Object.assign(mockExpenses[index], {
+    expenseDate: updates.date ?? mockExpenses[index].expenseDate,
+    expense: updates.description ?? mockExpenses[index].expense,
+    amount: updates.amount ?? mockExpenses[index].amount,
+    paymentMethod: updates.paymentMethod ?? mockExpenses[index].paymentMethod,
+    category: updates.category ?? mockExpenses[index].category,
+    datePaid: updates.datePaid ?? mockExpenses[index].datePaid,
+    modifiedDateTime: new Date().toISOString(),
+  });
+  return toExpense(mockExpenses[index]);
 }
 
 /**
- * Create a new expense
+ * Create a new expense.
+ * When USE_API: POST /api/expenses
  */
 export async function createExpense(expense: Omit<Expense, "id">): Promise<Expense> {
-  const nextId = Math.max(...mockExpenses.map((e) => e.Expense_I)) + 1;
+  if (USE_API) {
+    const body = expenseToApiBody(expense);
+    const res = await apiFetch("/api/expenses", { method: "POST", body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { title?: string };
+      throw new Error(err?.title ?? `Create failed: ${res.status}`);
+    }
+    const data = (await res.json()) as ApiExpense;
+    return toExpense(data);
+  }
+  const nextId = Math.max(0, ...mockExpenses.map((e) => e.expense_I)) + 1;
+  const now = new Date().toISOString();
   const api: ApiExpense = {
-    Expense_I: nextId,
-    ExpenseDate: expense.date,
-    Expense: expense.description,
-    Amount: expense.amount,
-    PaymentMethod: expense.paymentMethod ?? undefined,
-    Category: expense.category ?? undefined,
-    DatePaid: expense.datePaid ?? undefined,
+    expense_I: nextId,
+    expenseDate: expense.date,
+    expense: expense.description,
+    amount: expense.amount,
+    paymentMethod: expense.paymentMethod ?? undefined,
+    category: expense.category ?? undefined,
+    datePaid: expense.datePaid ?? undefined,
+    createdDateTime: now,
+    modifiedDateTime: now,
   };
   mockExpenses.push(api);
-  return Promise.resolve(toExpense(api));
+  return toExpense(api);
 }
 
 /**
- * Delete an expense
+ * Delete an expense.
+ * When USE_API: DELETE /api/expenses/{id}
  */
 export async function deleteExpense(id: number): Promise<void> {
-  const index = mockExpenses.findIndex((exp) => exp.Expense_I === id);
+  if (USE_API) {
+    const res = await apiFetch(`/api/expenses/${id}`, { method: "DELETE" });
+    if (!res.ok && res.status !== 404) throw new Error(`Delete failed: ${res.status}`);
+    return;
+  }
+  const index = mockExpenses.findIndex((exp) => exp.expense_I === id);
   if (index !== -1) mockExpenses.splice(index, 1);
-  return Promise.resolve();
 }
 
 /**
- * Bulk update expenses
+ * Bulk update expenses.
+ * When USE_API: PATCH /api/expenses/bulk with body { Ids, ExpenseDate?, Category?, setCategoryToNull?, DatePaid?, setDatePaidToNull? }
  */
 export async function bulkUpdateExpenses(ids: number[], updates: Partial<Expense>): Promise<void> {
-  const apiUpdates = partialToApi(updates);
+  if (USE_API) {
+    const body: Record<string, unknown> = { Ids: ids };
+    if (updates.date != null) body.ExpenseDate = updates.date;
+    if (updates.category !== undefined) body.Category = updates.category;
+    if (updates.datePaid !== undefined) body.DatePaid = updates.datePaid;
+    const res = await apiFetch("/api/expenses/bulk", { method: "PATCH", body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(`Bulk update failed: ${res.status}`);
+    return;
+  }
+  const patch = expenseToApiBody(updates);
   ids.forEach((id) => {
-    const index = mockExpenses.findIndex((exp) => exp.Expense_I === id);
-    if (index !== -1) mockExpenses[index] = { ...mockExpenses[index], ...apiUpdates };
+    const index = mockExpenses.findIndex((exp) => exp.expense_I === id);
+    if (index !== -1) {
+      if (patch.ExpenseDate != null) mockExpenses[index].expenseDate = patch.ExpenseDate as string;
+      if (patch.Category !== undefined) mockExpenses[index].category = patch.Category as number;
+      if (patch.DatePaid !== undefined) mockExpenses[index].datePaid = patch.DatePaid as string;
+      mockExpenses[index].modifiedDateTime = new Date().toISOString();
+    }
   });
-  return Promise.resolve();
 }
 
 /**
- * Bulk delete expenses
+ * Bulk delete expenses.
+ * When USE_API: DELETE /api/expenses/bulk with body { Ids }
  */
 export async function bulkDeleteExpenses(ids: number[]): Promise<void> {
+  if (USE_API) {
+    const res = await apiFetch("/api/expenses/bulk", { method: "DELETE", body: JSON.stringify({ Ids: ids }) });
+    if (!res.ok) throw new Error(`Bulk delete failed: ${res.status}`);
+    return;
+  }
   ids.forEach((id) => {
-    const index = mockExpenses.findIndex((exp) => exp.Expense_I === id);
+    const index = mockExpenses.findIndex((exp) => exp.expense_I === id);
     if (index !== -1) mockExpenses.splice(index, 1);
   });
-  return Promise.resolve();
 }

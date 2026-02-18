@@ -275,8 +275,8 @@ export default function ExpensesEditor() {
       }
 
       if (sortColumn === "category") {
-        const aName = (a.category != null ? categories.find((c) => c.Category_I === a.category)?.Name : null) ?? "";
-        const bName = (b.category != null ? categories.find((c) => c.Category_I === b.category)?.Name : null) ?? "";
+        const aName = (a.category != null ? categories.find((c) => c.category_I === a.category)?.name : null) ?? "";
+        const bName = (b.category != null ? categories.find((c) => c.category_I === b.category)?.name : null) ?? "";
         const aStr = aName.toLowerCase();
         const bStr = bName.toLowerCase();
         if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
@@ -660,7 +660,7 @@ export default function ExpensesEditor() {
                     <SelectContent>
                       <SelectItem value="">— None —</SelectItem>
                       {paymentMethods.map((pm) => (
-                        <SelectItem key={pm.ID} value={String(pm.ID)}>
+                        <SelectItem key={pm.id} value={String(pm.id)}>
                           {pm.PaymentMethod}
                         </SelectItem>
                       ))}
@@ -685,8 +685,8 @@ export default function ExpensesEditor() {
                     <SelectContent>
                       <SelectItem value="">— None —</SelectItem>
                       {categories.map((c) => (
-                        <SelectItem key={c.Category_I} value={String(c.Category_I)}>
-                          {c.Name}
+                        <SelectItem key={c.category_I} value={String(c.category_I)}>
+                          {c.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -767,7 +767,7 @@ export default function ExpensesEditor() {
                   <SelectContent>
                     <SelectItem value="">— None —</SelectItem>
                     {paymentMethods.map((pm) => (
-                      <SelectItem key={pm.ID} value={String(pm.ID)}>
+                      <SelectItem key={pm.id} value={String(pm.id)}>
                         {pm.PaymentMethod}
                       </SelectItem>
                     ))}
@@ -785,8 +785,8 @@ export default function ExpensesEditor() {
                   <SelectContent>
                     <SelectItem value="">— None —</SelectItem>
                     {categories.map((c) => (
-                      <SelectItem key={c.Category_I} value={String(c.Category_I)}>
-                        {c.Name}
+                      <SelectItem key={c.category_I} value={String(c.category_I)}>
+                        {c.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -854,8 +854,8 @@ export default function ExpensesEditor() {
                 <SelectContent>
                   <SelectItem value="">-- Keep Current --</SelectItem>
                   {categories.map((c) => (
-                    <SelectItem key={c.Category_I} value={String(c.Category_I)}>
-                      {c.Name}
+                    <SelectItem key={c.category_I} value={String(c.category_I)}>
+                      {c.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

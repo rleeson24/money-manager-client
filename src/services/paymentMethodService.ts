@@ -1,44 +1,43 @@
-// Type definitions
+import { USE_API, API_BASE } from "../config/api";
+
 export interface PaymentMethod {
-  ID: number;
+  id: number;
   PaymentMethod: string;
 }
 
-// Mock data for payment methods
 const mockPaymentMethods: PaymentMethod[] = [
-  { ID: 1, PaymentMethod: "Discover" },
-  { ID: 2, PaymentMethod: "Visa" },
-  { ID: 3, PaymentMethod: "Mastercard" },
-  { ID: 4, PaymentMethod: "American Express" },
-  { ID: 5, PaymentMethod: "Debit Card" },
-  { ID: 6, PaymentMethod: "Cash" },
-  { ID: 7, PaymentMethod: "Bank Transfer" },
-  { ID: 8, PaymentMethod: "PayPal" },
+  { id: 1, PaymentMethod: "Discover" },
+  { id: 2, PaymentMethod: "Visa" },
+  { id: 3, PaymentMethod: "Mastercard" },
+  { id: 4, PaymentMethod: "American Express" },
+  { id: 5, PaymentMethod: "Debit Card" },
+  { id: 6, PaymentMethod: "Cash" },
+  { id: 7, PaymentMethod: "Bank Transfer" },
+  { id: 8, PaymentMethod: "PayPal" },
 ];
 
 /**
- * Get all payment methods
+ * Get all payment methods.
+ * When USE_API: GET /api/payment-methods
  */
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {
-  // TODO: Replace with actual API call
-  // const response = await fetch("/api/payment-methods");
-  // if (!response.ok) throw new Error("Failed to fetch payment methods");
-  // return response.json();
-
-  // Mock implementation
-  return Promise.resolve([...mockPaymentMethods]);
+  if (USE_API) {
+    const res = await fetch(`${API_BASE}/api/payment-methods`, { credentials: "include", headers: { "Content-Type": "application/json" } });
+    if (!res.ok) throw new Error("Failed to fetch payment methods");
+    const data = (await res.json()) as PaymentMethod[];
+    return Array.isArray(data) ? data : [];
+  }
+  return [...mockPaymentMethods];
 }
 
 /**
- * Get a payment method by ID
+ * Get a payment method by ID.
+ * When USE_API: fetches all and finds by id. Otherwise uses mock.
  */
 export async function getPaymentMethod(id: number): Promise<PaymentMethod | null> {
-  // TODO: Replace with actual API call
-  // const response = await fetch(`/api/payment-methods/${id}`);
-  // if (!response.ok) throw new Error("Failed to fetch payment method");
-  // return response.json();
-
-  // Mock implementation
-  const paymentMethod = mockPaymentMethods.find((pm) => pm.ID === id);
-  return Promise.resolve(paymentMethod || null);
+  if (USE_API) {
+    const all = await getPaymentMethods();
+    return all.find((pm) => pm.id === id) ?? null;
+  }
+  return mockPaymentMethods.find((pm) => pm.id === id) ?? null;
 }
