@@ -47,7 +47,7 @@ type SortColumn =
 
 interface BulkUpdateForm {
   date?: string;
-  category?: string;
+  category?: number;
   datePaid?: string | null;
   setDatePaidToNull?: boolean;
 }
@@ -89,7 +89,7 @@ export default function ExpensesEditor() {
     description: string;
     amount: number;
     paymentMethod?: number | null;
-    category?: string | null;
+    category?: number | null;
     datePaid: string;
   }>({
     date: "",
@@ -274,6 +274,16 @@ export default function ExpensesEditor() {
         return 0;
       }
 
+      if (sortColumn === "category") {
+        const aName = (a.category != null ? categories.find((c) => c.Category_I === a.category)?.Name : null) ?? "";
+        const bName = (b.category != null ? categories.find((c) => c.Category_I === b.category)?.Name : null) ?? "";
+        const aStr = aName.toLowerCase();
+        const bStr = bName.toLowerCase();
+        if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
+        if (aStr > bStr) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      }
+
       if (sortColumn === "amount" || sortColumn === "paymentMethod") {
         const aNum = (aVal as number) ?? 0;
         const bNum = (bVal as number) ?? 0;
@@ -336,7 +346,7 @@ export default function ExpensesEditor() {
       updates.date = bulkUpdateForm.date + "T00:00:00";
     }
 
-    if (bulkUpdateForm.category !== undefined && bulkUpdateForm.category !== "") {
+    if (bulkUpdateForm.category !== undefined) {
       updates.category = bulkUpdateForm.category;
     }
 
@@ -427,7 +437,7 @@ export default function ExpensesEditor() {
       description: draftNewRow.description?.trim() ?? "",
       amount: draftNewRow.amount ?? 0,
       paymentMethod: draftNewRow.paymentMethod ?? null,
-      category: draftNewRow.category?.trim() || null,
+      category: draftNewRow.category ?? null,
       datePaid: draftNewRow.datePaid || null,
     };
     setExpenses((prev) => [...prev, newExpense]);
@@ -660,12 +670,12 @@ export default function ExpensesEditor() {
                 </td>
                 <td>
                   <Select
-                    value={exp.category ?? ""}
+                    value={exp.category != null ? String(exp.category) : ""}
                     onValueChange={(v) =>
                       optimisticUpdate(
                         exp,
                         "category",
-                        v === "" ? undefined : v
+                        v === "" ? undefined : Number(v)
                       )
                     }
                   >
@@ -675,7 +685,7 @@ export default function ExpensesEditor() {
                     <SelectContent>
                       <SelectItem value="">— None —</SelectItem>
                       {categories.map((c) => (
-                        <SelectItem key={c.Category_I} value={c.Name}>
+                        <SelectItem key={c.Category_I} value={String(c.Category_I)}>
                           {c.Name}
                         </SelectItem>
                       ))}
@@ -766,8 +776,8 @@ export default function ExpensesEditor() {
               </td>
               <td>
                 <Select
-                  value={draftNewRow.category ?? ""}
-                  onValueChange={(v) => updateDraft("category", v === "" ? undefined : v)}
+                  value={draftNewRow.category != null ? String(draftNewRow.category) : ""}
+                  onValueChange={(v) => updateDraft("category", v === "" ? undefined : Number(v))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -775,7 +785,7 @@ export default function ExpensesEditor() {
                   <SelectContent>
                     <SelectItem value="">— None —</SelectItem>
                     {categories.map((c) => (
-                      <SelectItem key={c.Category_I} value={c.Name}>
+                      <SelectItem key={c.Category_I} value={String(c.Category_I)}>
                         {c.Name}
                       </SelectItem>
                     ))}
@@ -830,11 +840,11 @@ export default function ExpensesEditor() {
             <div>
               <label className="block text-sm font-medium mb-1">Category</label>
               <Select
-                value={bulkUpdateForm.category || ""}
+                value={bulkUpdateForm.category != null ? String(bulkUpdateForm.category) : ""}
                 onValueChange={(v) =>
                   setBulkUpdateForm({
                     ...bulkUpdateForm,
-                    category: v || undefined,
+                    category: v === "" ? undefined : Number(v),
                   })
                 }
               >
@@ -844,7 +854,7 @@ export default function ExpensesEditor() {
                 <SelectContent>
                   <SelectItem value="">-- Keep Current --</SelectItem>
                   {categories.map((c) => (
-                    <SelectItem key={c.Category_I} value={c.Name}>
+                    <SelectItem key={c.Category_I} value={String(c.Category_I)}>
                       {c.Name}
                     </SelectItem>
                   ))}

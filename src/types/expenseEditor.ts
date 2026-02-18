@@ -8,7 +8,7 @@ export interface Expense {
   Expense: string;
   Amount: number;
   PaymentMethod?: number | null;
-  Category?: string | null;
+  Category?: number | null;
   DatePaid?: string;
 }
 

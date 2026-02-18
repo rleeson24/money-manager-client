@@ -143,7 +143,7 @@ export default function CreditCardExpenses() {
     return cleaned;
   }
 
-  function optimisticUpdate(id: number, field: string, value: string | number) {
+  function optimisticUpdate(id: number, field: string, value: string | number | null | undefined) {
     undoStack.current.push([...expenses]);
 
     setDirtyCells((d) => ({ ...d, [`${id}-${field}`]: true }));
@@ -204,6 +204,16 @@ export default function CreditCardExpenses() {
         const bDate = bVal ? new Date(bVal as string).getTime() : 0;
         if (aDate < bDate) return sortDirection === "asc" ? -1 : 1;
         if (aDate > bDate) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      }
+
+      if (sortColumn === "category") {
+        const aName = (a.category != null ? categories.find((c) => c.Category_I === a.category)?.Name : null) ?? "";
+        const bName = (b.category != null ? categories.find((c) => c.Category_I === b.category)?.Name : null) ?? "";
+        const aStr = aName.toLowerCase();
+        const bStr = bName.toLowerCase();
+        if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
+        if (aStr > bStr) return sortDirection === "asc" ? 1 : -1;
         return 0;
       }
 
@@ -420,9 +430,9 @@ export default function CreditCardExpenses() {
                     </td>
                     <td>
                       <Select
-                        value={exp.category || ""}
+                        value={exp.category != null ? String(exp.category) : ""}
                         onValueChange={(v) =>
-                          optimisticUpdate(id, "category", v)
+                          optimisticUpdate(id, "category", v === "" ? null : Number(v))
                         }
                       >
                         <SelectTrigger>
@@ -430,7 +440,7 @@ export default function CreditCardExpenses() {
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((c) => (
-                            <SelectItem key={c.Category_I} value={c.Name}>
+                            <SelectItem key={c.Category_I} value={String(c.Category_I)}>
                               {c.Name}
                             </SelectItem>
                           ))}

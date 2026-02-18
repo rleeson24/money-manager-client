@@ -7,7 +7,7 @@ export interface Expense {
   id: string | number
   description: string
   amount: number
-  category?: string | null
+  category?: number | null
   date: string // ISO date string format: YYYY-MM-DD
   notes?: string | null
   paymentMethod?: number | null

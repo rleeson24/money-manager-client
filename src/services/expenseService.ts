@@ -18,7 +18,7 @@ interface ApiExpense {
   Expense: string;
   Amount: number;
   PaymentMethod?: number;
-  Category?: string;
+  Category?: number;
   DatePaid?: string;
   CreatedDateTime?: string;
   ModifiedDateTime?: string;
@@ -61,15 +61,15 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 
 // Mock data in API shape (include timestamps for concurrency)
 const mockExpenses: ApiExpense[] = [
-  { Expense_I: 1, ExpenseDate: "2026-01-19T00:00:00", Expense: "COPA AIRLINES PANAMA PAN", Amount: 126.34, PaymentMethod: 1, Category: "Other Expenses (Pare)", DatePaid: undefined, CreatedDateTime: "2026-01-19T12:00:00Z", ModifiedDateTime: "2026-01-19T12:00:00Z" },
-  { Expense_I: 2, ExpenseDate: "2026-01-22T00:00:00", Expense: "Freddy's - custard", Amount: 5.51, PaymentMethod: 1, Category: "Dining/Eating Out", DatePaid: undefined, CreatedDateTime: "2026-01-22T12:00:00Z", ModifiedDateTime: "2026-01-22T12:00:00Z" },
-  { Expense_I: 3, ExpenseDate: "2026-01-22T00:00:00", Expense: "WALMART.COM - David birthday present - couch", Amount: 83.30, PaymentMethod: 1, Category: "Special Occasions (P)", DatePaid: undefined, CreatedDateTime: "2026-01-22T12:00:00Z", ModifiedDateTime: "2026-01-22T12:00:00Z" },
-  { Expense_I: 4, ExpenseDate: "2026-01-23T00:00:00", Expense: "Gas Station", Amount: 45.0, PaymentMethod: 1, Category: "Gas - Auto", DatePaid: undefined, CreatedDateTime: "2026-01-23T12:00:00Z", ModifiedDateTime: "2026-01-23T12:00:00Z" },
-  { Expense_I: 5, ExpenseDate: "2026-01-24T00:00:00", Expense: "Ross - return lita shoes", Amount: 21.79, PaymentMethod: 1, Category: "Other Expenses (Pare)", DatePaid: undefined, CreatedDateTime: "2026-01-24T12:00:00Z", ModifiedDateTime: "2026-01-24T12:00:00Z" },
-  { Expense_I: 6, ExpenseDate: "2026-01-25T00:00:00", Expense: "AMAZON - Luca Christmas gift", Amount: 15.99, PaymentMethod: 1, Category: "Gifts (Parent)", DatePaid: undefined, CreatedDateTime: "2026-01-25T12:00:00Z", ModifiedDateTime: "2026-01-25T12:00:00Z" },
-  { Expense_I: 7, ExpenseDate: "2026-01-26T00:00:00", Expense: "Pharmacy - Prescription", Amount: 32.5, PaymentMethod: 1, Category: "Health", DatePaid: undefined, CreatedDateTime: "2026-01-26T12:00:00Z", ModifiedDateTime: "2026-01-26T12:00:00Z" },
-  { Expense_I: 8, ExpenseDate: "2026-01-27T00:00:00", Expense: "Groceries - Whole Foods", Amount: 125.5, PaymentMethod: 1, Category: "Groceries (Parent)", DatePaid: undefined, CreatedDateTime: "2026-01-27T12:00:00Z", ModifiedDateTime: "2026-01-27T12:00:00Z" },
-  { Expense_I: 9, ExpenseDate: "2026-01-28T00:00:00", Expense: "Outdoor Equipment", Amount: 89.25, PaymentMethod: 1, Category: "Outdoors (Parent)", DatePaid: undefined, CreatedDateTime: "2026-01-28T12:00:00Z", ModifiedDateTime: "2026-01-28T12:00:00Z" },
+  { Expense_I: 1, ExpenseDate: "2026-01-19T00:00:00", Expense: "COPA AIRLINES PANAMA PAN", Amount: 126.34, PaymentMethod: 1, Category: 1, DatePaid: undefined, CreatedDateTime: "2026-01-19T12:00:00Z", ModifiedDateTime: "2026-01-19T12:00:00Z" },
+  { Expense_I: 2, ExpenseDate: "2026-01-22T00:00:00", Expense: "Freddy's - custard", Amount: 5.51, PaymentMethod: 1, Category: 2, DatePaid: undefined, CreatedDateTime: "2026-01-22T12:00:00Z", ModifiedDateTime: "2026-01-22T12:00:00Z" },
+  { Expense_I: 3, ExpenseDate: "2026-01-22T00:00:00", Expense: "WALMART.COM - David birthday present - couch", Amount: 83.30, PaymentMethod: 1, Category: 3, DatePaid: undefined, CreatedDateTime: "2026-01-22T12:00:00Z", ModifiedDateTime: "2026-01-22T12:00:00Z" },
+  { Expense_I: 4, ExpenseDate: "2026-01-23T00:00:00", Expense: "Gas Station", Amount: 45.0, PaymentMethod: 1, Category: 4, DatePaid: undefined, CreatedDateTime: "2026-01-23T12:00:00Z", ModifiedDateTime: "2026-01-23T12:00:00Z" },
+  { Expense_I: 5, ExpenseDate: "2026-01-24T00:00:00", Expense: "Ross - return lita shoes", Amount: 21.79, PaymentMethod: 1, Category: 1, DatePaid: undefined, CreatedDateTime: "2026-01-24T12:00:00Z", ModifiedDateTime: "2026-01-24T12:00:00Z" },
+  { Expense_I: 6, ExpenseDate: "2026-01-25T00:00:00", Expense: "AMAZON - Luca Christmas gift", Amount: 15.99, PaymentMethod: 1, Category: 8, DatePaid: undefined, CreatedDateTime: "2026-01-25T12:00:00Z", ModifiedDateTime: "2026-01-25T12:00:00Z" },
+  { Expense_I: 7, ExpenseDate: "2026-01-26T00:00:00", Expense: "Pharmacy - Prescription", Amount: 32.5, PaymentMethod: 1, Category: 5, DatePaid: undefined, CreatedDateTime: "2026-01-26T12:00:00Z", ModifiedDateTime: "2026-01-26T12:00:00Z" },
+  { Expense_I: 8, ExpenseDate: "2026-01-27T00:00:00", Expense: "Groceries - Whole Foods", Amount: 125.5, PaymentMethod: 1, Category: 6, DatePaid: undefined, CreatedDateTime: "2026-01-27T12:00:00Z", ModifiedDateTime: "2026-01-27T12:00:00Z" },
+  { Expense_I: 9, ExpenseDate: "2026-01-28T00:00:00", Expense: "Outdoor Equipment", Amount: 89.25, PaymentMethod: 1, Category: 7, DatePaid: undefined, CreatedDateTime: "2026-01-28T12:00:00Z", ModifiedDateTime: "2026-01-28T12:00:00Z" },
 ];
 
 /** When mocking conflict, remember the server modified we sent so "Yes" retry can succeed */
@@ -107,7 +107,7 @@ export async function getExpenses(params?: {
     const term = params.search.trim().toLowerCase();
     filtered = filtered.filter((exp) =>
       (exp.Expense && exp.Expense.toLowerCase().includes(term)) ||
-      (exp.Category && exp.Category.toLowerCase().includes(term)) ||
+      (exp.Category !== undefined && exp.Category !== null && exp.Category.toString().includes(term)) ||
       (exp.Amount !== undefined && exp.Amount.toString().includes(term))
     );
   }

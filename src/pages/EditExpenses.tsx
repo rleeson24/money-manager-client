@@ -28,7 +28,7 @@ function EditExpenses() {
   const [formData, setFormData] = useState<Expense>({
     description: "",
     amount: 0,
-    category: "",
+    category: null,
     date: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD format
     notes: "",
     datePaid: null,
@@ -67,7 +67,7 @@ function EditExpenses() {
           id: "1",
           description: "Groceries",
           amount: 125.5,
-          category: "Food",
+          category: 1,
           date: "2024-01-15",
           notes: "Weekly grocery shopping",
         },
@@ -75,7 +75,7 @@ function EditExpenses() {
           id: "2",
           description: "Gas",
           amount: 45.0,
-          category: "Transportation",
+          category: 2,
           date: "2024-01-16",
         },
       ];
@@ -108,7 +108,7 @@ function EditExpenses() {
           id: "1",
           description: "Groceries",
           amount: 125.5,
-          category: "Food",
+          category: 1,
           date: "2024-01-15",
           notes: "Weekly grocery shopping",
         },
@@ -116,7 +116,7 @@ function EditExpenses() {
           id: "2",
           description: "Gas",
           amount: 45.0,
-          category: "Transportation",
+          category: 2,
           date: "2024-01-16",
         },
       ];
@@ -155,7 +155,12 @@ function EditExpenses() {
 
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "amount" ? parseFloat(value) || 0 : value,
+      [name]:
+        name === "amount"
+          ? parseFloat(value) || 0
+          : name === "category"
+            ? (value === "" ? null : Number(value))
+            : value,
     }));
   };
 
@@ -175,7 +180,7 @@ function EditExpenses() {
       setError("Amount must be greater than 0");
       return;
     }
-    if (!formData.category?.trim()) {
+    if (formData.category == null || formData.category === undefined) {
       setError("Category is required");
       return;
     }
@@ -280,17 +285,17 @@ function EditExpenses() {
     navigate("/expenses/edit/new");
   };
 
-  // Common expense categories
+  // Common expense categories (id matches API Categories table)
   const categories = [
-    "Food",
-    "Transportation",
-    "Housing",
-    "Utilities",
-    "Entertainment",
-    "Healthcare",
-    "Shopping",
-    "Education",
-    "Other",
+    { id: 1, name: "Food" },
+    { id: 2, name: "Transportation" },
+    { id: 3, name: "Housing" },
+    { id: 4, name: "Utilities" },
+    { id: 5, name: "Entertainment" },
+    { id: 6, name: "Healthcare" },
+    { id: 7, name: "Shopping" },
+    { id: 8, name: "Education" },
+    { id: 9, name: "Other" },
   ];
 
   return (
@@ -349,14 +354,14 @@ function EditExpenses() {
               <select
                 id="category"
                 name="category"
-                value={formData.category || -1}
+                value={formData.category ?? ""}
                 onChange={handleInputChange}
                 required
               >
                 <option value="">Select a category</option>
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
                   </option>
                 ))}
               </select>
@@ -439,7 +444,7 @@ function EditExpenses() {
                         ${expense.amount.toFixed(2)}
                       </span>
                       <span className="expense-category">
-                        {expense.category}
+                        {categories.find((c) => c.id === expense.category)?.name ?? expense.category}
                       </span>
                       <span className="expense-date">
                         {new Date(expense.date).toLocaleDateString()}
