@@ -1,4 +1,4 @@
-import { USE_API, API_BASE } from "../config/api";
+import { USE_API, apiJson } from "../config/api";
 
 export interface PaymentMethod {
   id: number;
@@ -22,9 +22,7 @@ const mockPaymentMethods: PaymentMethod[] = [
  */
 export async function getPaymentMethods(): Promise<PaymentMethod[]> {
   if (USE_API) {
-    const res = await fetch(`${API_BASE}/api/payment-methods`, { credentials: "include", headers: { "Content-Type": "application/json" } });
-    if (!res.ok) throw new Error("Failed to fetch payment methods");
-    const data = (await res.json()) as PaymentMethod[];
+    const data = await apiJson<PaymentMethod[]>("/api/payment-methods", {}, "Failed to fetch payment methods");
     return Array.isArray(data) ? data : [];
   }
   return [...mockPaymentMethods];

@@ -1,4 +1,4 @@
-import { USE_API, API_BASE } from "../config/api";
+import { USE_API, apiJson, ApiError } from "../config/api";
 import type { Expense } from "../types/expense";
 
 /** Thrown when the server returns 409 Conflict (expense was already updated). */
@@ -52,14 +52,6 @@ function expenseToApiBody(expense: Omit<Expense, "id"> | Partial<Expense>): Reco
   return body;
 }
 
-async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  };
-  return fetch(`${API_BASE}${path}`, { ...options, credentials: "include", headers });
-}
-
 // ---------- Mock data (used when USE_API is false) ----------
 const mockExpenses: ApiExpense[] = [
   { expense_I: 1, expenseDate: "2026-01-19T00:00:00", expense: "COPA AIRLINES PANAMA PAN", amount: 126.34, paymentMethod: 1, category: 1, datePaid: undefined, createdDateTime: "2026-01-19T12:00:00Z", modifiedDateTime: "2026-01-19T12:00:00Z" },
@@ -93,9 +85,7 @@ export async function getExpenses(params?: {
     if (params?.paymentMethod != null) searchParams.set("paymentMethod", String(params.paymentMethod));
     if (params?.datePaidNull != null) searchParams.set("datePaidNull", String(params.datePaidNull));
     const qs = searchParams.toString();
-    const res = await apiFetch(`/api/expenses${qs ? `?${qs}` : ""}`);
-    if (!res.ok) throw new Error(`Failed to fetch expenses: ${res.status}`);
-    const data = (await res.json()) as ApiExpense[];
+    const data = await apiJson<ApiExpense[]>(`/api/expenses${qs ? `?${qs}` : ""}`, {}, "Failed to fetch expenses");
     let list = (Array.isArray(data) ? data : []).map(toExpense);
     if (params?.search?.trim()) {
       const term = params.search.trim().toLowerCase();
@@ -131,11 +121,13 @@ export async function getExpenses(params?: {
  */
 export async function getExpense(id: number): Promise<Expense | null> {
   if (USE_API) {
-    const res = await apiFetch(`/api/expenses/${id}`);
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`Failed to fetch expense: ${res.status}`);
-    const data = (await res.json()) as ApiExpense;
-    return toExpense(data);
+    try {
+      const data = await apiJson<ApiExpense>(`/api/expenses/${id}`, {}, "Failed to fetch expense");
+      return data ? toExpense(data) : null;
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) return null;
+      throw e;
+    }
   }
   const api = mockExpenses.find((exp) => exp.expense_I === id);
   return api ? toExpense(api) : null;
@@ -147,17 +139,19 @@ export async function getExpense(id: number): Promise<Expense | null> {
  */
 export async function updateExpense(id: number, updates: Partial<Expense>): Promise<Expense> {
   if (USE_API) {
-    const body = expenseToApiBody(updates);
-    const res = await apiFetch(`/api/expenses/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    });
-    const data = (await res.json()) as ApiExpense & { title?: string };
-    if (res.status === 409 && data.expense_I != null) {
-      throw new UpdateConflictError("Expense was updated by someone else.", toExpense(data as ApiExpense));
+    try {
+      const data = await apiJson<ApiExpense>(`/api/expenses/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(expenseToApiBody(updates)),
+      }, "Failed to update expense");
+      if (!data) throw new Error("Update failed: no response body");
+      return toExpense(data);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409 && e.body && typeof e.body === "object" && "expense_I" in e.body) {
+        throw new UpdateConflictError("Expense was updated by someone else.", toExpense(e.body as ApiExpense));
+      }
+      throw e;
     }
-    if (!res.ok) throw new Error(data?.title ?? `Update failed: ${res.status}`);
-    return toExpense(data as ApiExpense);
   }
 
   const index = mockExpenses.findIndex((exp) => exp.expense_I === id);
@@ -206,12 +200,8 @@ export async function updateExpense(id: number, updates: Partial<Expense>): Prom
 export async function createExpense(expense: Omit<Expense, "id">): Promise<Expense> {
   if (USE_API) {
     const body = expenseToApiBody(expense);
-    const res = await apiFetch("/api/expenses", { method: "POST", body: JSON.stringify(body) });
-    if (!res.ok) {
-      const err = (await res.json().catch(() => ({}))) as { title?: string };
-      throw new Error(err?.title ?? `Create failed: ${res.status}`);
-    }
-    const data = (await res.json()) as ApiExpense;
+    const data = await apiJson<ApiExpense>("/api/expenses", { method: "POST", body: JSON.stringify(body) }, "Failed to create expense");
+    if (!data) throw new Error("Create failed: no response body");
     return toExpense(data);
   }
   const nextId = Math.max(0, ...mockExpenses.map((e) => e.expense_I)) + 1;
@@ -237,8 +227,12 @@ export async function createExpense(expense: Omit<Expense, "id">): Promise<Expen
  */
 export async function deleteExpense(id: number): Promise<void> {
   if (USE_API) {
-    const res = await apiFetch(`/api/expenses/${id}`, { method: "DELETE" });
-    if (!res.ok && res.status !== 404) throw new Error(`Delete failed: ${res.status}`);
+    try {
+      await apiJson(`/api/expenses/${id}`, { method: "DELETE" }, "Failed to delete expense");
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) return;
+      throw e;
+    }
     return;
   }
   const index = mockExpenses.findIndex((exp) => exp.expense_I === id);
@@ -255,8 +249,7 @@ export async function bulkUpdateExpenses(ids: number[], updates: Partial<Expense
     if (updates.date != null) body.ExpenseDate = updates.date;
     if (updates.category !== undefined) body.Category = updates.category;
     if (updates.datePaid !== undefined) body.DatePaid = updates.datePaid;
-    const res = await apiFetch("/api/expenses/bulk", { method: "PATCH", body: JSON.stringify(body) });
-    if (!res.ok) throw new Error(`Bulk update failed: ${res.status}`);
+    await apiJson("/api/expenses/bulk", { method: "PATCH", body: JSON.stringify(body) }, "Failed to bulk update expenses");
     return;
   }
   const patch = expenseToApiBody(updates);
@@ -277,8 +270,7 @@ export async function bulkUpdateExpenses(ids: number[], updates: Partial<Expense
  */
 export async function bulkDeleteExpenses(ids: number[]): Promise<void> {
   if (USE_API) {
-    const res = await apiFetch("/api/expenses/bulk", { method: "DELETE", body: JSON.stringify({ Ids: ids }) });
-    if (!res.ok) throw new Error(`Bulk delete failed: ${res.status}`);
+    await apiJson("/api/expenses/bulk", { method: "DELETE", body: JSON.stringify({ Ids: ids }) }, "Failed to bulk delete expenses");
     return;
   }
   ids.forEach((id) => {

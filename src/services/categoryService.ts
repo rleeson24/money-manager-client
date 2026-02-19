@@ -1,4 +1,4 @@
-import { USE_API, API_BASE } from "../config/api";
+import { USE_API, apiJson } from "../config/api";
 
 export interface Category {
   category_I: number;
@@ -31,9 +31,7 @@ const mockCategories: Category[] = [
  */
 export async function getCategories(): Promise<Category[]> {
   if (USE_API) {
-    const res = await fetch(`${API_BASE}/api/categories`, { credentials: "include", headers: { "Content-Type": "application/json" } });
-    if (!res.ok) throw new Error("Failed to fetch categories");
-    const data = (await res.json()) as Category[];
+    const data = await apiJson<Category[]>("/api/categories", {}, "Failed to fetch categories");
     return Array.isArray(data) ? data : [];
   }
   return [...mockCategories];
