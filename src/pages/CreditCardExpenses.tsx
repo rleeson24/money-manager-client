@@ -14,7 +14,6 @@ import {
 import { getExpenses, updateExpense, type Expense } from "../services/expenseService";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
-import "./CreditCardExpenses.css";
 
 interface CellState {
   [key: string]: boolean;
@@ -296,8 +295,8 @@ export default function CreditCardExpenses() {
     <Card className="m-4">
       <CardContent className="overflow-auto">
         <div className="flex justify-between mb-4">
-          <header className="page-header">
-            <h1>Credit Card Expenses</h1>
+          <header className="flex items-center gap-4 flex-wrap">
+            <h1 className="text-2xl font-semibold m-0">Credit Card Expenses</h1>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">Payment Method:</label>
@@ -317,13 +316,21 @@ export default function CreditCardExpenses() {
                   </SelectContent>
                 </Select>
               </div>
-              <button onClick={() => navigate("/")} className="back-button">
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="py-2 px-4 bg-gray-100 border border-gray-200 rounded-lg text-sm hover:bg-gray-200 cursor-pointer transition-colors"
+              >
                 ← Back to Home
               </button>
             </div>
           </header>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -331,37 +338,37 @@ export default function CreditCardExpenses() {
         ) : (
           <>
             <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 bg-background border-b">
+              <thead className="sticky top-0 z-10 bg-gray-50 border-b-2 border-gray-200">
                 <tr>
-                  <th className="w-12">
+                  <th className="w-10 p-2 text-center font-semibold select-none">
                     <span className="text-xs">Excl</span>
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none w-32"
+                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-32 transition-colors"
                     onClick={() => handleSort("date")}
                   >
                     Date {getSortIcon("date")}
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none"
+                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none transition-colors"
                     onClick={() => handleSort("description")}
                   >
                     Expense {getSortIcon("description")}
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none w-28"
+                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-28 transition-colors"
                     onClick={() => handleSort("amount")}
                   >
                     Amount {getSortIcon("amount")}
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none"
+                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none transition-colors"
                     onClick={() => handleSort("category")}
                   >
                     Category {getSortIcon("category")}
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none w-32"
+                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-32 transition-colors"
                     onClick={() => handleSort("datePaid")}
                   >
                     Date Paid {getSortIcon("datePaid")}
@@ -372,19 +379,19 @@ export default function CreditCardExpenses() {
                 {getSortedExpenses().map((exp, r) => {
                   const id = expIdNum(exp);
                   return (
-                  <tr key={id} className="border-b">
-                    <td className="text-center">
+                  <tr key={id} className="border-b border-gray-200 even:bg-gray-50/50 hover:bg-slate-50">
+                    <td className="w-10 p-1.5 text-center align-middle border-b border-gray-200">
                       <input
                         type="checkbox"
                         checked={excludedExpenses.has(id)}
                         onChange={(e) =>
                           handleExcludeToggle(id, e.target.checked)
                         }
-                        className="cursor-pointer"
+                        className="cursor-pointer w-full"
                       />
                     </td>
-                    <td className="w-32">
-                      <div className="flex items-center">
+                    <td className="w-32 p-1.5 align-middle border-b border-gray-200">
+                      <div className="flex items-center gap-1 w-full [&_input]:w-full [&_input]:focus:outline-2 [&_input]:focus:outline-blue-500 [&_input]:focus:outline-offset-[-1px] [&_input]:focus:bg-blue-50/50 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-inset">
                         <Input
                           data-cell={`${r}-0`}
                           type="date"
@@ -396,8 +403,8 @@ export default function CreditCardExpenses() {
                         {cellBadge(id, "date")}
                       </div>
                     </td>
-                    <td>
-                      <div className="flex items-center">
+                    <td className="p-1.5 align-middle border-b border-gray-200">
+                      <div className="flex items-center gap-1 w-full [&_input]:w-full [&_input]:focus:outline-2 [&_input]:focus:outline-blue-500 [&_input]:focus:outline-offset-[-1px] [&_input]:focus:bg-blue-50/50 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-inset">
                         <Input
                           data-cell={`${r}-1`}
                           value={exp.description || ""}
@@ -408,8 +415,8 @@ export default function CreditCardExpenses() {
                         {cellBadge(id, "description")}
                       </div>
                     </td>
-                    <td className="w-28">
-                      <div className="flex items-center">
+                    <td className="w-28 p-1.5 align-middle border-b border-gray-200">
+                      <div className="flex items-center gap-1 w-full [&_input]:w-full [&_input]:focus:outline-2 [&_input]:focus:outline-blue-500 [&_input]:focus:outline-offset-[-1px] [&_input]:focus:bg-blue-50/50 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-inset">
                         <Input
                           data-cell={`${r}-2`}
                           type="text"
@@ -423,33 +430,35 @@ export default function CreditCardExpenses() {
                             const numValue = parseFloat(normalized) || 0;
                             optimisticUpdate(id, "amount", numValue);
                           }}
-                          className={exp.amount < 0 ? "text-blue-600" : ""}
+                          className={exp.amount < 0 ? "text-blue-600 text-right" : "text-right"}
                         />
                         {cellBadge(id, "amount")}
                       </div>
                     </td>
-                    <td>
-                      <Select
-                        value={exp.category != null ? String(exp.category) : ""}
-                        onValueChange={(v) =>
-                          optimisticUpdate(id, "category", v === "" ? null : Number(v))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((c) => (
-                            <SelectItem key={c.category_I} value={String(c.category_I)}>
-                              {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {cellBadge(id, "category")}
+                    <td className="p-1.5 align-middle border-b border-gray-200">
+                      <div className="flex items-center gap-1 w-full [&_[role=combobox]]:w-full [&_[role=combobox]]:focus-within:outline-2 [&_[role=combobox]]:focus-within:outline-blue-500 rounded [&_[role=combobox]]:bg-white/75">
+                        <Select
+                          value={exp.category != null ? String(exp.category) : ""}
+                          onValueChange={(v) =>
+                            optimisticUpdate(id, "category", v === "" ? null : Number(v))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((c) => (
+                              <SelectItem key={c.category_I} value={String(c.category_I)}>
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {cellBadge(id, "category")}
+                      </div>
                     </td>
-                    <td className="w-32">
-                      <div className="flex items-center">
+                    <td className="w-32 p-1.5 align-middle border-b border-gray-200">
+                      <div className="flex items-center gap-1 w-full [&_input]:w-full [&_input]:focus:outline-2 [&_input]:focus:outline-blue-500 [&_input]:focus:outline-offset-[-1px] [&_input]:focus:bg-blue-50/50 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-inset">
                         <Input
                           data-cell={`${r}-5`}
                           type="date"
@@ -466,13 +475,13 @@ export default function CreditCardExpenses() {
               </tbody>
             </table>
 
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-gray-500 mt-2">
               ⚠ Unsaved · ❌ Error · Ctrl+Z Undo
             </p>
           </>
         )}
 
-        <div className="flex justify-between items-center mt-4 pt-4 border-t">
+        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
           <Button onClick={handleMarkAsPaid} variant="primary">
             Mark as paid
           </Button>

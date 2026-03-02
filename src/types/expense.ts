@@ -15,4 +15,6 @@ export interface Expense {
   /** Server-set; used for optimistic concurrency on update */
   createdDateTime?: string
   modifiedDateTime?: string
+  /** True when this expense has split lines (sub-charges by category). */
+  isSplit?: boolean
 }

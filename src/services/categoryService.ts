@@ -23,6 +23,7 @@ const mockCategories: Category[] = [
   { category_I: 15, name: "Housing" },
   { category_I: 16, name: "Education" },
   { category_I: 17, name: "Food" },
+  { category_I: 18, name: "Split" },
 ];
 
 /**

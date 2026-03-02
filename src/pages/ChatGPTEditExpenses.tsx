@@ -1,5 +1,5 @@
 import debounce from "lodash/debounce";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -17,6 +17,9 @@ import {
   DialogTitle,
 } from "../components/chatGPTUIComponents";
 import { getExpenses, updateExpense, bulkUpdateExpenses, bulkDeleteExpenses, UpdateConflictError } from "../services/expenseService";
+import { ExpenseSplitReadonlyGrid } from "../components/ExpenseSplitReadonlyGrid";
+import { ExpenseSplitDialog } from "../components/ExpenseSplitDialog";
+import type { ExpenseSplit } from "../types/expenseSplit";
 import Swal from "sweetalert2";
 import type { Expense } from "../types/expense";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
@@ -67,6 +70,11 @@ export default function ExpensesEditor() {
   const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
   const [bulkUpdateForm, setBulkUpdateForm] = useState<BulkUpdateForm>({});
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [expandedSplits, setExpandedSplits] = useState<Set<number>>(new Set());
+  const [splitDialogOpen, setSplitDialogOpen] = useState(false);
+  const [splitDialogExpense, setSplitDialogExpense] = useState<Expense | null>(null);
+  const [splitDialogInitialSplits, setSplitDialogInitialSplits] = useState<ExpenseSplit[]>([]);
+  const [splitRefreshKey, setSplitRefreshKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const undoStack = useRef<Expense[][]>([]);
@@ -160,7 +168,7 @@ export default function ExpensesEditor() {
     return cleaned;
   }
 
-  function optimisticUpdate(expense: Expense, field: string, value: string | number | null | undefined) {
+  function optimisticUpdate(expense: Expense, field: string, value: string | number | boolean | null | undefined) {
     const id = expIdNum(expense);
     undoStack.current.push([...expenses]);
 
@@ -233,6 +241,39 @@ export default function ExpensesEditor() {
     return typeof exp.id === "number" ? exp.id : parseInt(String(exp.id), 10);
   }
 
+  /** Revert isSplit (and category) for an expense when user cancels the split dialog; uses undo stack. */
+  function revertIsSplitForExpense(expenseId: number) {
+    const stack = undoStack.current;
+    if (stack.length >= 2) {
+      stack.pop();
+      const prev = stack.pop();
+      if (prev) {
+        const prevExp = prev.find((e) => expIdNum(e) === expenseId);
+        if (prevExp != null)
+          setExpenses((current) =>
+            current.map((e) =>
+              expIdNum(e) === expenseId
+                ? { ...e, isSplit: prevExp.isSplit, category: prevExp.category }
+                : e
+            )
+          );
+      }
+    } else if (stack.length === 1) {
+      const prev = stack.pop();
+      if (prev) {
+        const prevExp = prev.find((e) => expIdNum(e) === expenseId);
+        if (prevExp != null)
+          setExpenses((current) =>
+            current.map((e) =>
+              expIdNum(e) === expenseId
+                ? { ...e, isSplit: prevExp.isSplit, category: prevExp.category }
+                : e
+            )
+          );
+      }
+    }
+  }
+
   function cellBadge(id: number, field: string) {
     if (errorCells[`${id}-${field}`])
       return <span className="text-red-600 ml-1">❌</span>;
@@ -263,8 +304,8 @@ export default function ExpensesEditor() {
     }
 
     const sorted = [...expenses].sort((a, b) => {
-      const aVal: string | number | undefined | null = a[sortColumn as keyof Expense];
-      const bVal: string | number | undefined | null = b[sortColumn as keyof Expense];
+      const aVal: string | number | boolean | undefined | null = a[sortColumn as keyof Expense];
+      const bVal: string | number | boolean | undefined | null = b[sortColumn as keyof Expense];
 
       if (sortColumn === "date" || sortColumn === "datePaid") {
         const aDate = aVal ? new Date(aVal as string).getTime() : 0;
@@ -529,6 +570,7 @@ export default function ExpensesEditor() {
         <table className="expenses-table w-full text-sm">
           <thead className="sticky top-0 bg-background border-b">
             <tr>
+              <th className="w-8 px-1" aria-label="Expand splits" />
               <th>
                 <input
                   type="checkbox"
@@ -570,6 +612,7 @@ export default function ExpensesEditor() {
               >
                 Category {getSortIcon("category")}
               </th>
+              <th className="w-12 text-center">Split</th>
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none w-32"
                 onClick={() => handleSort("datePaid")}
@@ -582,7 +625,39 @@ export default function ExpensesEditor() {
             {getSortedExpenses().map((exp, r) => {
               const id = expIdNum(exp);
               return (
-              <tr key={id} className="border-b">
+              <React.Fragment key={id}>
+              <tr className="border-b">
+                <td className="w-8 px-1 align-middle">
+                  {exp.isSplit && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        setExpandedSplits((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(id)) next.delete(id);
+                          else next.add(id);
+                          return next;
+                        })
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setExpandedSplits((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(id)) next.delete(id);
+                            else next.add(id);
+                            return next;
+                          });
+                        }
+                      }}
+                      className="text-gray-500 hover:text-gray-800 cursor-pointer select-none inline-block"
+                      aria-label={expandedSplits.has(id) ? "Collapse split" : "Expand split"}
+                    >
+                      {expandedSplits.has(id) ? "▲" : "▼"}
+                    </span>
+                  )}
+                </td>
                 <td>
                   <input
                     type="checkbox"
@@ -678,6 +753,7 @@ export default function ExpensesEditor() {
                         v === "" ? undefined : Number(v)
                       )
                     }
+                    disabled={exp.isSplit ?? false}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -693,6 +769,26 @@ export default function ExpensesEditor() {
                   </Select>
                   {cellBadge(id, "category")}
                 </td>
+                <td className="w-12 text-center">
+                  <input
+                    type="checkbox"
+                    checked={exp.isSplit ?? false}
+                    onChange={(e) =>
+                      {
+                        optimisticUpdate(exp, "isSplit", e.target.checked)
+                        if (e.target.checked) {
+                          const splitCategoryId = categories.find((c) => c.name === "Split")?.category_I
+                          if (splitCategoryId != null) optimisticUpdate(exp, "category", splitCategoryId)
+                          setSplitDialogExpense(exp);
+                          setSplitDialogInitialSplits([]);
+                          setSplitDialogOpen(true);
+                        }
+                      }
+                    }
+                    className="cursor-pointer"
+                    aria-label="Split"
+                  />
+                </td>
                 <td className="w-32">
                   <div className="flex items-center">
                     <Input
@@ -707,9 +803,28 @@ export default function ExpensesEditor() {
                   </div>
                 </td>
               </tr>
+              {expandedSplits.has(id) && (
+                <tr>
+                  <td colSpan={9} className="p-0 align-top">
+                    <ExpenseSplitReadonlyGrid
+                      expenseId={id}
+                      parentAmount={exp.amount ?? 0}
+                      categories={categories}
+                      onEditClick={(splits) => {
+                        setSplitDialogExpense(exp);
+                        setSplitDialogInitialSplits(splits);
+                        setSplitDialogOpen(true);
+                      }}
+                      refreshKey={splitRefreshKey}
+                    />
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             ); })}
             {/* New row placeholder - not in database until Add is clicked */}
             <tr className="border-b border-dashed bg-gray-50/70" aria-label="New expense row">
+              <td className="w-8 px-1" />
               <td className="align-middle">
                 <Button
                   type="button"
@@ -792,6 +907,7 @@ export default function ExpensesEditor() {
                   </SelectContent>
                 </Select>
               </td>
+              <td className="w-12" />
               <td className="w-32">
                 <Input
                   type="date"
@@ -917,6 +1033,26 @@ export default function ExpensesEditor() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Split expenses edit dialog */}
+      {splitDialogExpense && (
+        <ExpenseSplitDialog
+          open={splitDialogOpen}
+          onOpenChange={(open) => {
+            setSplitDialogOpen(open);
+            if (!open) setSplitDialogExpense(null);
+          }}
+          expenseId={expIdNum(splitDialogExpense)}
+          parentAmount={splitDialogExpense.amount ?? 0}
+          initialSplits={splitDialogInitialSplits}
+          categories={categories}
+          onSaveSuccess={() => setSplitRefreshKey((k) => k + 1)}
+          onCancel={() => {
+            revertIsSplitForExpense(expIdNum(splitDialogExpense));
+            setSplitDialogExpense(null);
+          }}
+        />
+      )}
 
       {/* Bulk Delete Confirmation Dialog */}
       <Dialog open={bulkDeleteDialogOpen}>

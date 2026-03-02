@@ -79,14 +79,16 @@ export interface SelectProps {
   value?: string | number;
   onValueChange: (value: string) => void;
   children: ReactNode;
+  disabled?: boolean;
 }
 
-export function Select({ value, onValueChange, children }: SelectProps) {
+export function Select({ value, onValueChange, children, disabled }: SelectProps) {
   return (
     <select
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
-      className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      disabled={disabled}
+      className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:pointer-events-none"
     >
       {children}
     </select>

@@ -296,6 +296,7 @@ function EditExpenses() {
     { id: 7, name: "Shopping" },
     { id: 8, name: "Education" },
     { id: 9, name: "Other" },
+    { id: 10, name: "Split" },
   ];
 
   return (

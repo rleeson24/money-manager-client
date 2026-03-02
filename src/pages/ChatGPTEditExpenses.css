@@ -56,7 +56,6 @@
    ========================= */
 
 .expenses-table input,
-.expenses-table button,
 .expenses-table [role="combobox"] {
   width: 100%;
 }
