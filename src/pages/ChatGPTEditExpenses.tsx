@@ -570,7 +570,6 @@ export default function ExpensesEditor() {
         <table className="expenses-table w-full text-sm">
           <thead className="sticky top-0 bg-background border-b">
             <tr>
-              <th className="w-8 px-1" aria-label="Expand splits" />
               <th>
                 <input
                   type="checkbox"
@@ -613,6 +612,7 @@ export default function ExpensesEditor() {
                 Category {getSortIcon("category")}
               </th>
               <th className="w-12 text-center">Split</th>
+              <th className="w-8 px-1" aria-label="Expand splits" />
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none w-32"
                 onClick={() => handleSort("datePaid")}
@@ -627,37 +627,6 @@ export default function ExpensesEditor() {
               return (
               <React.Fragment key={id}>
               <tr className="border-b">
-                <td className="w-8 px-1 align-middle">
-                  {exp.isSplit && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={() =>
-                        setExpandedSplits((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(id)) next.delete(id);
-                          else next.add(id);
-                          return next;
-                        })
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setExpandedSplits((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(id)) next.delete(id);
-                            else next.add(id);
-                            return next;
-                          });
-                        }
-                      }}
-                      className="text-gray-500 hover:text-gray-800 cursor-pointer select-none inline-block"
-                      aria-label={expandedSplits.has(id) ? "Collapse split" : "Expand split"}
-                    >
-                      {expandedSplits.has(id) ? "▲" : "▼"}
-                    </span>
-                  )}
-                </td>
                 <td>
                   <input
                     type="checkbox"
@@ -789,6 +758,37 @@ export default function ExpensesEditor() {
                     aria-label="Split"
                   />
                 </td>
+                <td className="w-8 px-1 align-middle">
+                  {exp.isSplit && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        setExpandedSplits((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(id)) next.delete(id);
+                          else next.add(id);
+                          return next;
+                        })
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setExpandedSplits((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(id)) next.delete(id);
+                            else next.add(id);
+                            return next;
+                          });
+                        }
+                      }}
+                      className="text-gray-500 hover:text-gray-800 cursor-pointer select-none inline-block"
+                      aria-label={expandedSplits.has(id) ? "Collapse split" : "Expand split"}
+                    >
+                      {expandedSplits.has(id) ? "▲" : "▼"}
+                    </span>
+                  )}
+                </td>
                 <td className="w-32">
                   <div className="flex items-center">
                     <Input
@@ -824,7 +824,6 @@ export default function ExpensesEditor() {
             ); })}
             {/* New row placeholder - not in database until Add is clicked */}
             <tr className="border-b border-dashed bg-gray-50/70" aria-label="New expense row">
-              <td className="w-8 px-1" />
               <td className="align-middle">
                 <Button
                   type="button"
@@ -908,6 +907,7 @@ export default function ExpensesEditor() {
                 </Select>
               </td>
               <td className="w-12" />
+              <td className="w-8 px-1" />
               <td className="w-32">
                 <Input
                   type="date"
