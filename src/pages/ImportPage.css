@@ -1,0 +1,117 @@
+.import-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.import-page h1 {
+  margin-bottom: 1rem;
+}
+
+.import-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.import-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  background: #fafafa;
+}
+
+.import-card h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.25rem;
+}
+
+.import-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.import-section {
+  border-left: 3px solid #666;
+  padding-left: 0.75rem;
+}
+
+.import-section h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.import-section-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.import-section-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.import-section-row input[type="file"] {
+  max-width: 280px;
+}
+
+.import-section-row select {
+  min-width: 160px;
+  padding: 0.35rem 0.5rem;
+}
+
+.import-section-row button {
+  padding: 0.4rem 0.75rem;
+  background: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.import-section-row button:hover {
+  background: #0052a3;
+}
+
+.import-section-row button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+.last-import {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 0.35rem;
+}
+
+.last-import.none {
+  font-style: italic;
+}
+
+.import-result {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.import-result.success {
+  background: #e6f4ea;
+  color: #0d5c1e;
+}
+
+.import-result.error {
+  background: #fce8e6;
+  color: #c5221f;
+}
+
+.import-result ul {
+  margin: 0.25rem 0 0 1rem;
+  padding: 0;
+}

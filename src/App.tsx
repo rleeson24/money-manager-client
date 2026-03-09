@@ -10,6 +10,7 @@ import HomePage from "./pages/HomePage";
 import EditExpenses from "./pages/EditExpenses";
 import ChatGPTEditExpenses from "./pages/ChatGPTEditExpenses";
 import CreditCardExpenses from "./pages/CreditCardExpenses";
+import ImportPage from "./pages/ImportPage";
 import "./App.css";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/expenses/edit" element={<EditExpenses />} />
         <Route path="/expenses/chatgptedit" element={<ChatGPTEditExpenses />} />
         <Route path="/expenses/creditcard" element={<CreditCardExpenses />} />
+        <Route path="/import" element={<ImportPage />} />
         <Route path="/expenses/edit/:id" element={<EditExpenses />} />
         <Route path="/expenses/edit/new" element={<EditExpenses />} />
       </Routes>

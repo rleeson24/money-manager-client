@@ -32,6 +32,9 @@ function HomePage() {
             <Link to="/expenses/creditcard" className="nav-link">
               🤖 Credit Card Expenses
             </Link>
+            <Link to="/import" className="nav-link">
+              📥 Banking Import
+            </Link>
           </div>
         </section>
 
