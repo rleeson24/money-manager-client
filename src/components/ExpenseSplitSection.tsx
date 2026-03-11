@@ -143,7 +143,7 @@ export function ExpenseSplitSection({
               value={String(sp.category)}
               onValueChange={(v) => handleUpdate(sp.id, "category", Number(v))}
             >
-              <SelectTrigger className="w-36">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -186,7 +186,7 @@ export function ExpenseSplitSection({
             value={String(draft.category)}
             onValueChange={(v) => setDraft((prev) => ({ ...prev, category: Number(v) }))}
           >
-            <SelectTrigger className="w-36">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

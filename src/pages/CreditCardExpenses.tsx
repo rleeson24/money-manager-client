@@ -195,8 +195,8 @@ export default function CreditCardExpenses() {
     }
 
     const sorted = [...expenses].sort((a, b) => {
-      const aVal: string | number | null | undefined = a[sortColumn as keyof Expense];
-      const bVal: string | number | null | undefined = b[sortColumn as keyof Expense];
+      const aVal: string | number | boolean | null | undefined = a[sortColumn as keyof Expense];
+      const bVal: string | number | boolean | null | undefined = b[sortColumn as keyof Expense];
 
       if (sortColumn === "date" || sortColumn === "datePaid") {
         const aDate = aVal ? new Date(aVal as string).getTime() : 0;

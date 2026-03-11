@@ -81,7 +81,7 @@ export default function ExpensesEditor() {
   const patchDebounceRef = useRef<
     Record<
       string,
-      ((id: number, field: string, value: string | number | null | undefined, exp: Expense) => void) & {
+      ((id: number, field: string, value: string | number | boolean | null | undefined, exp: Expense) => void) & {
         cancel(): void;
       }
     >
@@ -182,13 +182,13 @@ export default function ExpensesEditor() {
     type PatchFn = ((
       patchId: number,
       patchField: string,
-      patchValue: string | number | null | undefined,
+      patchValue: string | number | boolean | null | undefined,
       exp: Expense
     ) => void) & { cancel(): void };
     const key = `${id}-${field}`;
     if (!patchDebounceRef.current[key]) {
       patchDebounceRef.current[key] = debounce(
-        (patchId: number, patchField: string, patchValue: string | number | null | undefined, exp: Expense) => {
+        (patchId: number, patchField: string, patchValue: string | number | boolean | null | undefined, exp: Expense) => {
           const payload: Partial<Expense> = {
             [patchField]: patchValue === undefined || patchValue === null ? undefined : patchValue,
             modifiedDateTime: exp.modifiedDateTime,

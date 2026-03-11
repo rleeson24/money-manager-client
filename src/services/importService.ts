@@ -29,7 +29,6 @@ export async function importFromFile(
 
   const res = await fetch(`${API_BASE}/api/import/file`, {
     method: "POST",
-    credentials: "include",
     body: form,
   });
 
