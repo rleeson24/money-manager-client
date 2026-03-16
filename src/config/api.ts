@@ -29,6 +29,7 @@ export async function apiJson<T>(
   options: RequestInit = {},
   errorMessage?: string
 ): Promise<T | undefined> {
+  // Always send JSON headers unless explicitly overridden
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
@@ -37,6 +38,8 @@ export async function apiJson<T>(
     ...options,
     headers,
   });
+
+  // Handle non-2xx responses first
   if (!res.ok) {
     let body: unknown;
     const ct = res.headers.get("content-type");
@@ -48,6 +51,28 @@ export async function apiJson<T>(
     const message = errorMessage ?? `API error ${res.status}: ${res.statusText}`;
     throw new ApiError(res.status, message, body);
   }
-  if (res.status === 204) return undefined;
-  return (await res.json()) as T;
+
+  // For 204 No Content (and similar), there is intentionally no body.
+  if (res.status === 204 || res.status === 205 || res.status === 304) {
+    return undefined;
+  }
+
+  // Some endpoints return 200 with an empty body or non-JSON content.
+  // In those cases, just return undefined instead of throwing a SyntaxError.
+  const ct = res.headers.get("content-type") ?? "";
+  const hasJsonBody = ct.toLowerCase().includes("application/json");
+
+  if (!hasJsonBody) {
+    return undefined;
+  }
+
+  try {
+    // If the body is empty, this can still throw; treat that as "no data".
+    return (await res.json()) as T;
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      return undefined;
+    }
+    throw e;
+  }
 }

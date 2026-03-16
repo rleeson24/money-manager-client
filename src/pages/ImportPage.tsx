@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardContent,
+  Button,
+} from "../components/chatGPTUIComponents";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import {
   getLastImportDates,
@@ -66,6 +71,8 @@ export default function ImportPage() {
   const [loading, setLoading] = useState(true);
   const [importingId, setImportingId] = useState<number | null>(null);
   const [result, setResult] = useState<{ sectionId: number; data: ImportResult } | null>(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -139,13 +146,24 @@ export default function ImportPage() {
   ];
 
   return (
-    <div className="import-page">
-      <h1>Banking Import</h1>
-      <p>
-        <Link to="/">← Back to Home</Link>
-      </p>
+    <Card className="m-4">
+      <CardContent className="import-page">
+        <header className="w-full border-b border-gray-200 bg-white/60 backdrop-blur-sm mb-4">
+          <div className="flex flex-wrap justify-between items-center gap-4 px-4 py-3">
+            <h1 className="text-xl font-semibold text-gray-900 m-0 whitespace-nowrap">
+              Banking Import
+            </h1>
+            <Button
+              onClick={() => navigate("/")}
+              variant="primary"
+              className="!bg-gray-600 hover:!bg-gray-700 whitespace-nowrap"
+            >
+              ← Back to Home
+            </Button>
+          </div>
+        </header>
 
-      <div className="import-cards">
+        <div className="import-cards">
         {cards.map((card) => (
           <div key={card.title} className="import-card">
             <h2>{card.title}</h2>
@@ -234,7 +252,8 @@ export default function ImportPage() {
             </div>
           </div>
         ))}
-      </div>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

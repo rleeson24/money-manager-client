@@ -531,12 +531,13 @@ export default function ExpensesEditor() {
               onChange={(e) => setMonth(e.target.value)}
               className="w-40"
             />
-            <button
+            <Button
               onClick={() => navigate("/")}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-600 text-white hover:bg-gray-700 transition whitespace-nowrap"
+              variant="primary"
+              className="!bg-gray-600 hover:!bg-gray-700 whitespace-nowrap"
             >
               ← Back to Home
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -757,7 +758,7 @@ export default function ExpensesEditor() {
                       }),
                       control: (base) => ({
                         ...base,
-                        minHeight: 30,
+                        minHeight: 32,
                         borderRadius: 6,
                         borderColor: "#d1d5db",
                       }),
@@ -796,7 +797,7 @@ export default function ExpensesEditor() {
                       }),
                       control: (base) => ({
                         ...base,
-                        minHeight: 30,
+                        minHeight: 32,
                         borderRadius: 6,
                         borderColor: "#d1d5db",
                       }),
@@ -897,7 +898,7 @@ export default function ExpensesEditor() {
                   variant="primary"
                   disabled={!hasDraftContent()}
                   onClick={commitDraftRow}
-                  className="!px-2 !py-1 text-xs"
+                  className="!px-2 text-xs"
                 >
                   Add
                 </Button>
@@ -962,7 +963,7 @@ export default function ExpensesEditor() {
                     }),
                     control: (base) => ({
                       ...base,
-                      minHeight: 30,
+                      minHeight: 32,
                       borderRadius: 6,
                       borderColor: "#d1d5db",
                     }),
@@ -998,7 +999,7 @@ export default function ExpensesEditor() {
                     }),
                     control: (base) => ({
                       ...base,
-                      minHeight: 30,
+                      minHeight: 32,
                       borderRadius: 6,
                       borderColor: "#d1d5db",
                     }),
@@ -1084,7 +1085,7 @@ export default function ExpensesEditor() {
                   }),
                   control: (base) => ({
                     ...base,
-                    minHeight: 30,
+                    minHeight: 32,
                     borderRadius: 6,
                     borderColor: "#d1d5db",
                   }),

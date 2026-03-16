@@ -219,7 +219,7 @@ export function ExpenseSplitDialog({
                           }),
                           control: (base) => ({
                             ...base,
-                            minHeight: 30,
+                            minHeight: 32,
                             borderRadius: 6,
                             borderColor: "#d1d5db",
                           }),

@@ -38,7 +38,7 @@ export function Button({
   className = "",
   ...props
 }: ButtonProps) {
-  const base = "px-3 py-1.5 rounded-lg text-sm font-medium transition";
+  const base = "min-h-[32px] h-8 px-3 py-1.5 rounded-lg text-sm font-medium transition inline-flex items-center justify-center box-border";
   const styles: Record<ButtonVariant, string> = {
     primary: "bg-blue-600 text-white hover:bg-blue-700",
     secondary: "bg-gray-100 hover:bg-gray-200",
@@ -67,7 +67,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <input
       ref={ref}
       {...props}
-      className={`w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+      className={`h-8 min-h-8 w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 box-border ${className}`}
     />
   );
 });
