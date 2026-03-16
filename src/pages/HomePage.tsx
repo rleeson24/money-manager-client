@@ -5,7 +5,6 @@
  */
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import ExampleComponent from "../components/ExampleComponent";
 import "./HomePage.css";
 
@@ -20,24 +19,6 @@ function HomePage() {
       </header>
 
       <main className="App-main">
-        <section className="navigation-section">
-          <h2>Navigation</h2>
-          <div className="nav-links">
-            <Link to="/expenses/edit" className="nav-link">
-              📝 Edit Expenses
-            </Link>
-            <Link to="/expenses/chatgptedit" className="nav-link">
-              🤖 ChatGPT Edit Expenses
-            </Link>
-            <Link to="/expenses/creditcard" className="nav-link">
-              🤖 Credit Card Expenses
-            </Link>
-            <Link to="/import" className="nav-link">
-              📥 Banking Import
-            </Link>
-          </div>
-        </section>
-
         <section>
           <h2>Interactive Counter Example</h2>
           <p>

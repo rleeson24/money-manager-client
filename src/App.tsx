@@ -6,6 +6,7 @@
  */
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppLayout from "./components/AppLayout";
 import HomePage from "./pages/HomePage";
 import EditExpenses from "./pages/EditExpenses";
 import ChatGPTEditExpenses from "./pages/ChatGPTEditExpenses";
@@ -17,13 +18,15 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/expenses/edit" element={<EditExpenses />} />
-        <Route path="/expenses/chatgptedit" element={<ChatGPTEditExpenses />} />
-        <Route path="/expenses/creditcard" element={<CreditCardExpenses />} />
-        <Route path="/import" element={<ImportPage />} />
-        <Route path="/expenses/edit/:id" element={<EditExpenses />} />
-        <Route path="/expenses/edit/new" element={<EditExpenses />} />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/expenses/edit" element={<EditExpenses />} />
+          <Route path="/expenses/chatgptedit" element={<ChatGPTEditExpenses />} />
+          <Route path="/expenses/creditcard" element={<CreditCardExpenses />} />
+          <Route path="/import" element={<ImportPage />} />
+          <Route path="/expenses/edit/:id" element={<EditExpenses />} />
+          <Route path="/expenses/edit/new" element={<EditExpenses />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
