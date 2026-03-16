@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ReactSelect, { SingleValue } from "react-select";
 import {
   Card,
   CardContent,
@@ -10,10 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
   Button,
+  SearchableSelect,
 } from "../components/chatGPTUIComponents";
 import { getExpenses, updateExpense, type Expense } from "../services/expenseService";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
+import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 
 interface CellState {
   [key: string]: boolean;
@@ -40,10 +43,30 @@ export default function CreditCardExpenses() {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingAmount, setEditingAmount] = useState<Record<number, string>>({});
+  const [focusedAmountId, setFocusedAmountId] = useState<number | null>(null);
   const undoStack = useRef<Expense[][]>([]);
   const debounceRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
 
   const navigate = useNavigate();
+
+  const paymentMethodOptions = useMemo(
+    () =>
+      paymentMethods.map((pm) => ({
+        value: pm.id.toString(),
+        label: pm.PaymentMethod,
+      })),
+    [paymentMethods]
+  );
+
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((c) => ({
+        value: String(c.category_I),
+        label: c.name,
+      })),
+    [categories]
+  );
 
   // Load payment methods and set default to "Discover"
   useEffect(() => {
@@ -126,21 +149,6 @@ export default function CreditCardExpenses() {
     window.addEventListener("keydown", handleUndo);
     return () => window.removeEventListener("keydown", handleUndo);
   }, []);
-
-  // Normalize amount input: move '-' to beginning if present at end
-  function normalizeAmountInput(value: string): string {
-    if (!value) return value;
-    
-    const endsWithDash = value.endsWith('-');
-    const startsWithDash = value.startsWith('-');
-    const cleaned = value.replace(/-/g, '');
-    
-    if (endsWithDash || startsWithDash) {
-      return cleaned ? `-${cleaned}` : '-';
-    }
-    
-    return cleaned;
-  }
 
   function optimisticUpdate(id: number, field: string, value: string | number | null | undefined) {
     undoStack.current.push([...expenses]);
@@ -300,21 +308,40 @@ export default function CreditCardExpenses() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">Payment Method:</label>
-                <Select
-                  value={selectedPaymentMethod?.toString() || ""}
-                  onValueChange={(v) => setSelectedPaymentMethod(parseInt(v))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((pm) => (
-                      <SelectItem key={pm.id} value={pm.id.toString()}>
-                        {pm.PaymentMethod}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ReactSelect
+                  classNamePrefix="pm-select"
+                  isSearchable
+                  options={paymentMethodOptions}
+                  value={
+                    selectedPaymentMethod != null
+                      ? paymentMethodOptions.find(
+                          (o) => o.value === selectedPaymentMethod.toString()
+                        ) ?? null
+                      : null
+                  }
+                  onChange={(
+                    opt: SingleValue<{ value: string; label: string }>
+                  ) =>
+                    setSelectedPaymentMethod(
+                      opt ? parseInt(opt.value, 10) : null
+                    )
+                  }
+                  styles={{
+                    container: (base) => ({ ...base, minWidth: 160 }),
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                    valueContainer: (base) => ({
+                      ...base,
+                      padding: "0 6px",
+                    }),
+                    control: (base) => ({
+                      ...base,
+                      minHeight: 30,
+                      borderRadius: 6,
+                      borderColor: "#d1d5db",
+                    }),
+                  }}
+                  menuPortalTarget={document.body}
+                />
               </div>
               <button
                 type="button"
@@ -421,14 +448,42 @@ export default function CreditCardExpenses() {
                           data-cell={`${r}-2`}
                           type="text"
                           value={
-                            exp.amount !== undefined && exp.amount !== null
-                              ? exp.amount.toString()
-                              : ""
+                            focusedAmountId === id && editingAmount[id] !== undefined
+                              ? editingAmount[id]
+                              : exp.amount !== undefined && exp.amount !== null
+                                ? Number(exp.amount).toFixed(2)
+                                : ""
                           }
+                          onFocus={() => {
+                            setFocusedAmountId(id);
+                            setEditingAmount((prev) => ({
+                              ...prev,
+                              [id]:
+                                exp.amount !== undefined && exp.amount !== null
+                                  ? Number(exp.amount).toFixed(2)
+                                  : "",
+                            }));
+                          }}
                           onChange={(e) => {
-                            const normalized = normalizeAmountInput(e.target.value);
-                            const numValue = parseFloat(normalized) || 0;
-                            optimisticUpdate(id, "amount", numValue);
+                            setEditingAmount((prev) => ({
+                              ...prev,
+                              [id]: sanitizeAmountInput(e.target.value),
+                            }));
+                          }}
+                          onBlur={() => {
+                            const raw =
+                              focusedAmountId === id ? editingAmount[id] ?? "" : "";
+                            const formatted = formatAmountForBlur(raw);
+                            const n = parseFloat(formatted);
+                            if (formatted !== "" && !Number.isNaN(n)) {
+                              optimisticUpdate(id, "amount", n);
+                            }
+                            setEditingAmount((prev) => {
+                              const next = { ...prev };
+                              delete next[id];
+                              return next;
+                            });
+                            setFocusedAmountId((prev) => (prev === id ? null : prev));
                           }}
                           className={exp.amount < 0 ? "text-blue-600 text-right" : "text-right"}
                         />
@@ -437,23 +492,43 @@ export default function CreditCardExpenses() {
                     </td>
                     <td className="p-1.5 align-middle border-b border-gray-200">
                       <div className="flex items-center gap-1 w-full [&_[role=combobox]]:w-full [&_[role=combobox]]:focus-within:outline-2 [&_[role=combobox]]:focus-within:outline-blue-500 rounded [&_[role=combobox]]:bg-white/75">
-                        <Select
-                          value={exp.category != null ? String(exp.category) : ""}
-                          onValueChange={(v) =>
-                            optimisticUpdate(id, "category", v === "" ? null : Number(v))
+                        <ReactSelect
+                          classNamePrefix="cat-select"
+                          isSearchable
+                          isClearable
+                          options={categoryOptions}
+                          value={
+                            exp.category != null
+                              ? categoryOptions.find(
+                                  (o) => o.value === String(exp.category)
+                                ) ?? null
+                              : null
                           }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((c) => (
-                              <SelectItem key={c.category_I} value={String(c.category_I)}>
-                                {c.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          onChange={(
+                            opt: SingleValue<{ value: string; label: string }>
+                          ) =>
+                            optimisticUpdate(
+                              id,
+                              "category",
+                              opt ? Number(opt.value) : null
+                            )
+                          }
+                          styles={{
+                            container: (base) => ({ ...base, minWidth: 140 }),
+                            menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                            valueContainer: (base) => ({
+                              ...base,
+                              padding: "0 6px",
+                            }),
+                            control: (base) => ({
+                              ...base,
+                              minHeight: 30,
+                              borderRadius: 6,
+                              borderColor: "#d1d5db",
+                            }),
+                          }}
+                          menuPortalTarget={document.body}
+                        />
                         {cellBadge(id, "category")}
                       </div>
                     </td>

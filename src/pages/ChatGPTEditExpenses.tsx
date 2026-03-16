@@ -1,15 +1,11 @@
 import debounce from "lodash/debounce";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ReactSelect, { SingleValue } from "react-select";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Button,
   Dialog,
   DialogContent,
@@ -24,6 +20,7 @@ import Swal from "sweetalert2";
 import type { Expense } from "../types/expense";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
+import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 import "./ChatGPTEditExpenses.css";
 
 /*
@@ -77,6 +74,8 @@ export default function ExpensesEditor() {
   const [splitRefreshKey, setSplitRefreshKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [editingAmount, setEditingAmount] = useState<Record<number, string>>({});
+  const [focusedAmountId, setFocusedAmountId] = useState<number | null>(null);
   const undoStack = useRef<Expense[][]>([]);
   const patchDebounceRef = useRef<
     Record<
@@ -91,22 +90,47 @@ export default function ExpensesEditor() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
+  const paymentMethodOptions = useMemo(
+    () =>
+      [
+        { value: "", label: "— None —" },
+        ...paymentMethods.map((pm) => ({
+          value: String(pm.id),
+          label: pm.PaymentMethod,
+        })),
+      ],
+    [paymentMethods]
+  );
+
+  const categoryOptions = useMemo(
+    () =>
+      [
+        { value: "", label: "— None —" },
+        ...categories.map((c) => ({
+          value: String(c.category_I),
+          label: c.name,
+        })),
+      ],
+    [categories]
+  );
+
   // Draft row for "add new" - not in database until user fills and blurs
+  const today = () => new Date().toISOString().split("T")[0];
   const [draftNewRow, setDraftNewRow] = useState<{
     date: string;
     description: string;
-    amount: number;
+    amount: string;
     paymentMethod?: number | null;
     category?: number | null;
     datePaid: string;
-  }>({
-    date: "",
+  }>(() => ({
+    date: today(),
     description: "",
-    amount: 0,
+    amount: "",
     paymentMethod: undefined,
     category: undefined,
     datePaid: "",
-  });
+  }));
 
   // Debounce search term by 1 second (lodash debounce)
   const setDebouncedSearchTermDebounced = useMemo(
@@ -149,23 +173,13 @@ export default function ExpensesEditor() {
     return () => window.removeEventListener("keydown", handleUndo);
   }, []);
 
-  // Normalize amount input: move '-' to beginning if present at end
-  function normalizeAmountInput(value: string): string {
-    if (!value) return value;
-    
-    // Check if value ends with '-' or starts with '-'
-    const endsWithDash = value.endsWith('-');
-    const startsWithDash = value.startsWith('-');
-    
-    // Remove all '-' signs
-    const cleaned = value.replace(/-/g, '');
-    
-    // If there was a '-' (at beginning or end), add it to the beginning
-    if (endsWithDash || startsWithDash) {
-      return cleaned ? `-${cleaned}` : '-';
-    }
-    
-    return cleaned;
+  function clearAmountEditing(id: number) {
+    setEditingAmount((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setFocusedAmountId((prev) => (prev === id ? null : prev));
   }
 
   function optimisticUpdate(expense: Expense, field: string, value: string | number | boolean | null | undefined) {
@@ -462,9 +476,12 @@ export default function ExpensesEditor() {
   }
 
   function hasDraftContent(): boolean {
+    const amountTrimmed = draftNewRow.amount?.trim() ?? "";
+    const amountValid =
+      amountTrimmed !== "" && !Number.isNaN(parseFloat(draftNewRow.amount));
     return (
       (draftNewRow.description?.trim() ?? "") !== "" ||
-      (draftNewRow.amount !== 0 && !Number.isNaN(draftNewRow.amount)) ||
+      amountValid ||
       (draftNewRow.date?.trim() ?? "") !== ""
     );
   }
@@ -472,20 +489,21 @@ export default function ExpensesEditor() {
   function commitDraftRow() {
     if (!hasDraftContent()) return;
     const tempId = nextTempIdRef.current--;
+    const amountNum = parseFloat(draftNewRow.amount) || 0;
     const newExpense: Expense = {
       id: tempId,
       date: draftNewRow.date || `${month}-01T00:00:00`,
       description: draftNewRow.description?.trim() ?? "",
-      amount: draftNewRow.amount ?? 0,
+      amount: amountNum,
       paymentMethod: draftNewRow.paymentMethod ?? null,
       category: draftNewRow.category ?? null,
       datePaid: draftNewRow.datePaid || null,
     };
     setExpenses((prev) => [...prev, newExpense]);
     setDraftNewRow({
-      date: "",
+      date: today(),
       description: "",
-      amount: 0,
+      amount: "",
       paymentMethod: undefined,
       category: undefined,
       datePaid: "",
@@ -669,14 +687,37 @@ export default function ExpensesEditor() {
                       type="text"
                       step="0.01"
                       value={
-                        exp.amount !== undefined && exp.amount !== null
-                          ? Number(exp.amount).toFixed(2)
-                          : ""
+                        focusedAmountId === id && editingAmount[id] !== undefined
+                          ? editingAmount[id]
+                          : exp.amount !== undefined && exp.amount !== null
+                            ? Number(exp.amount).toFixed(2)
+                            : ""
                       }
+                      onFocus={() => {
+                        setFocusedAmountId(id);
+                        setEditingAmount((prev) => ({
+                          ...prev,
+                          [id]:
+                            exp.amount !== undefined && exp.amount !== null
+                              ? Number(exp.amount).toFixed(2)
+                              : "",
+                        }));
+                      }}
                       onChange={(e) => {
-                        const normalized = normalizeAmountInput(e.target.value);
-                        const numValue = parseFloat(normalized) || 0;
-                        optimisticUpdate(exp, "amount", numValue);
+                        setEditingAmount((prev) => ({
+                          ...prev,
+                          [id]: sanitizeAmountInput(e.target.value),
+                        }));
+                      }}
+                      onBlur={() => {
+                        const raw =
+                          focusedAmountId === id ? editingAmount[id] ?? "" : "";
+                        const formatted = formatAmountForBlur(raw);
+                        const n = parseFloat(formatted);
+                        if (formatted !== "" && !Number.isNaN(n)) {
+                          optimisticUpdate(exp, "amount", n);
+                        }
+                        clearAmountEditing(id);
                       }}
                       className={
                         exp.amount < 0
@@ -688,54 +729,80 @@ export default function ExpensesEditor() {
                   </div>
                 </td>
                 <td>
-                  <Select
-                    value={exp.paymentMethod != null ? String(exp.paymentMethod) : ""}
-                    onValueChange={(v) =>
+                  <ReactSelect
+                    classNamePrefix="pm-select"
+                    isClearable
+                    isSearchable
+                    options={paymentMethodOptions}
+                    value={
+                      exp.paymentMethod != null
+                        ? paymentMethodOptions.find(
+                            (o) => o.value === String(exp.paymentMethod)
+                          ) ?? null
+                        : paymentMethodOptions.find((o) => o.value === "") ?? null
+                    }
+                    onChange={(opt: SingleValue<{ value: string; label: string }>) =>
                       optimisticUpdate(
                         exp,
                         "paymentMethod",
-                        v === "" ? undefined : Number(v)
+                        !opt || opt.value === "" ? undefined : Number(opt.value)
                       )
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">— None —</SelectItem>
-                      {paymentMethods.map((pm) => (
-                        <SelectItem key={pm.id} value={String(pm.id)}>
-                          {pm.PaymentMethod}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    styles={{
+                      container: (base) => ({ ...base, minWidth: 140 }),
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      valueContainer: (base) => ({
+                        ...base,
+                        padding: "0 6px",
+                      }),
+                      control: (base) => ({
+                        ...base,
+                        minHeight: 30,
+                        borderRadius: 6,
+                        borderColor: "#d1d5db",
+                      }),
+                    }}
+                    menuPortalTarget={document.body}
+                  />
                   {cellBadge(id, "paymentMethod")}
                 </td>
                 <td>
-                  <Select
-                    value={exp.category != null ? String(exp.category) : ""}
-                    onValueChange={(v) =>
+                  <ReactSelect
+                    classNamePrefix="cat-select"
+                    isClearable
+                    isSearchable
+                    options={categoryOptions}
+                    value={
+                      exp.category != null
+                        ? categoryOptions.find(
+                            (o) => o.value === String(exp.category)
+                          ) ?? null
+                        : categoryOptions.find((o) => o.value === "") ?? null
+                    }
+                    onChange={(opt: SingleValue<{ value: string; label: string }>) =>
                       optimisticUpdate(
                         exp,
                         "category",
-                        v === "" ? undefined : Number(v)
+                        !opt || opt.value === "" ? undefined : Number(opt.value)
                       )
                     }
-                    disabled={exp.isSplit ?? false}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">— None —</SelectItem>
-                      {categories.map((c) => (
-                        <SelectItem key={c.category_I} value={String(c.category_I)}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    isDisabled={exp.isSplit ?? false}
+                    styles={{
+                      container: (base) => ({ ...base, minWidth: 140 }),
+                      menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                      valueContainer: (base) => ({
+                        ...base,
+                        padding: "0 6px",
+                      }),
+                      control: (base) => ({
+                        ...base,
+                        minHeight: 30,
+                        borderRadius: 6,
+                        borderColor: "#d1d5db",
+                      }),
+                    }}
+                    menuPortalTarget={document.body}
+                  />
                   {cellBadge(id, "category")}
                 </td>
                 <td className="w-12 text-center">
@@ -841,6 +908,7 @@ export default function ExpensesEditor() {
                   placeholder="Date"
                   value={draftNewRow.date}
                   onChange={(e) => updateDraft("date", e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="bg-white/80 placeholder:italic"
                 />
               </td>
@@ -855,56 +923,88 @@ export default function ExpensesEditor() {
               <td className="w-28 text-right">
                 <Input
                   type="text"
-                  value={
-                    draftNewRow.amount !== 0 && !Number.isNaN(draftNewRow.amount)
-                      ? Number(draftNewRow.amount).toFixed(2)
-                      : ""
-                  }
+                  value={draftNewRow.amount}
                   onChange={(e) => {
-                    const normalized = normalizeAmountInput(e.target.value);
-                    updateDraft("amount", parseFloat(normalized) || 0);
+                    updateDraft("amount", sanitizeAmountInput(e.target.value));
+                  }}
+                  onBlur={() => {
+                    updateDraft("amount", formatAmountForBlur(draftNewRow.amount));
                   }}
                   placeholder="0.00"
                   className="text-right bg-white/80 placeholder:italic placeholder:text-gray-400"
                 />
               </td>
               <td>
-                <Select
-                  value={draftNewRow.paymentMethod != null ? String(draftNewRow.paymentMethod) : ""}
-                  onValueChange={(v) =>
-                    updateDraft("paymentMethod", v === "" ? undefined : Number(v))
+                <ReactSelect
+                  classNamePrefix="pm-select"
+                  isClearable
+                  isSearchable
+                  options={paymentMethodOptions}
+                  value={
+                    draftNewRow.paymentMethod != null
+                      ? paymentMethodOptions.find(
+                          (o) => o.value === String(draftNewRow.paymentMethod)
+                        ) ?? null
+                      : paymentMethodOptions.find((o) => o.value === "") ?? null
                   }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">— None —</SelectItem>
-                    {paymentMethods.map((pm) => (
-                      <SelectItem key={pm.id} value={String(pm.id)}>
-                        {pm.PaymentMethod}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(opt: SingleValue<{ value: string; label: string }>) =>
+                    updateDraft(
+                      "paymentMethod",
+                      !opt || opt.value === "" ? undefined : Number(opt.value)
+                    )
+                  }
+                  styles={{
+                    container: (base) => ({ ...base, minWidth: 140 }),
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                    valueContainer: (base) => ({
+                      ...base,
+                      padding: "0 6px",
+                    }),
+                    control: (base) => ({
+                      ...base,
+                      minHeight: 30,
+                      borderRadius: 6,
+                      borderColor: "#d1d5db",
+                    }),
+                  }}
+                  menuPortalTarget={document.body}
+                />
               </td>
               <td>
-                <Select
-                  value={draftNewRow.category != null ? String(draftNewRow.category) : ""}
-                  onValueChange={(v) => updateDraft("category", v === "" ? undefined : Number(v))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">— None —</SelectItem>
-                    {categories.map((c) => (
-                      <SelectItem key={c.category_I} value={String(c.category_I)}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ReactSelect
+                  classNamePrefix="cat-select"
+                  isClearable
+                  isSearchable
+                  options={categoryOptions}
+                  value={
+                    draftNewRow.category != null
+                      ? categoryOptions.find(
+                          (o) => o.value === String(draftNewRow.category)
+                        ) ?? null
+                      : categoryOptions.find((o) => o.value === "") ?? null
+                  }
+                  onChange={(opt: SingleValue<{ value: string; label: string }>) =>
+                    updateDraft(
+                      "category",
+                      !opt || opt.value === "" ? undefined : Number(opt.value)
+                    )
+                  }
+                  styles={{
+                    container: (base) => ({ ...base, minWidth: 140 }),
+                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                    valueContainer: (base) => ({
+                      ...base,
+                      padding: "0 6px",
+                    }),
+                    control: (base) => ({
+                      ...base,
+                      minHeight: 30,
+                      borderRadius: 6,
+                      borderColor: "#d1d5db",
+                    }),
+                  }}
+                  menuPortalTarget={document.body}
+                />
               </td>
               <td className="w-12" />
               <td className="w-8 px-1" />
@@ -913,6 +1013,7 @@ export default function ExpensesEditor() {
                   type="date"
                   value={draftNewRow.datePaid}
                   onChange={(e) => updateDraft("datePaid", e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="bg-white/80 placeholder:italic"
                 />
               </td>
@@ -955,27 +1056,41 @@ export default function ExpensesEditor() {
 
             <div>
               <label className="block text-sm font-medium mb-1">Category</label>
-              <Select
-                value={bulkUpdateForm.category != null ? String(bulkUpdateForm.category) : ""}
-                onValueChange={(v) =>
+              <ReactSelect
+                classNamePrefix="cat-select"
+                isClearable
+                isSearchable
+                options={categoryOptions}
+                value={
+                  bulkUpdateForm.category != null
+                    ? categoryOptions.find(
+                        (o) => o.value === String(bulkUpdateForm.category)
+                      ) ?? null
+                    : categoryOptions.find((o) => o.value === "") ?? null
+                }
+                onChange={(opt: SingleValue<{ value: string; label: string }>) =>
                   setBulkUpdateForm({
                     ...bulkUpdateForm,
-                    category: v === "" ? undefined : Number(v),
+                    category:
+                      !opt || opt.value === "" ? undefined : Number(opt.value),
                   })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">-- Keep Current --</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.category_I} value={String(c.category_I)}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                styles={{
+                  container: (base) => ({ ...base, minWidth: 140 }),
+                  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                  valueContainer: (base) => ({
+                    ...base,
+                    padding: "0 6px",
+                  }),
+                  control: (base) => ({
+                    ...base,
+                    minHeight: 30,
+                    borderRadius: 6,
+                    borderColor: "#d1d5db",
+                  }),
+                }}
+                menuPortalTarget={document.body}
+              />
             </div>
 
             <div>

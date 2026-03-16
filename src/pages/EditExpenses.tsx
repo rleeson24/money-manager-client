@@ -9,9 +9,11 @@
  * - Add new expenses
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Expense } from "../types/expense";
+import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
+import ReactSelect, { SingleValue } from "react-select";
 import "./EditExpenses.css";
 
 function EditExpenses() {
@@ -34,6 +36,7 @@ function EditExpenses() {
     datePaid: null,
     id: 0,
   });
+  const [amountStr, setAmountStr] = useState("");
 
   // Load expenses on component mount
   useEffect(() => {
@@ -132,6 +135,7 @@ function EditExpenses() {
           datePaid: expense.datePaid || null,
           id: expense.id,
         });
+        setAmountStr(expense.amount != null ? expense.amount.toFixed(2) : "");
       } else {
         setError("Expense not found");
       }
@@ -152,15 +156,13 @@ function EditExpenses() {
     >
   ) => {
     const { name, value } = e.target;
-
+    if (name === "amount") return; // handled by amount input
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "amount"
-          ? parseFloat(value) || 0
-          : name === "category"
-            ? (value === "" ? null : Number(value))
-            : value,
+        name === "category"
+          ? (value === "" ? null : Number(value))
+          : value,
     }));
   };
 
@@ -176,7 +178,8 @@ function EditExpenses() {
       setError("Description is required");
       return;
     }
-    if (formData.amount <= 0) {
+    const amountNum = parseFloat(formatAmountForBlur(amountStr)) || 0;
+    if (amountNum <= 0) {
       setError("Amount must be greater than 0");
       return;
     }
@@ -202,7 +205,7 @@ function EditExpenses() {
         // Mock update
         setExpenses((prev) =>
           prev.map((exp) =>
-            exp.id.toString() === id ? { ...exp, ...formData } : exp
+            exp.id.toString() === id ? { ...exp, ...formData, amount: amountNum } : exp
           )
         );
       } else {
@@ -218,6 +221,7 @@ function EditExpenses() {
         // Mock create
         const newExpense: Expense = {
           ...formData,
+          amount: amountNum,
         };
         setExpenses((prev) => [...prev, newExpense]);
       }
@@ -232,6 +236,7 @@ function EditExpenses() {
         datePaid: null,
         id: 0,
       });
+      setAmountStr("");
 
       if (isEditMode) {
         navigate("/expenses/edit");
@@ -282,6 +287,7 @@ function EditExpenses() {
       datePaid: null,
       id: 0,
     });
+    setAmountStr("");
     navigate("/expenses/edit/new");
   };
 
@@ -298,6 +304,15 @@ function EditExpenses() {
     { id: 9, name: "Other" },
     { id: 10, name: "Split" },
   ];
+
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((c) => ({
+        value: String(c.id),
+        label: c.name,
+      })),
+    []
+  );
 
   return (
     <div className="edit-expenses-page">
@@ -336,14 +351,20 @@ function EditExpenses() {
                 Amount <span className="required">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 id="amount"
                 name="amount"
-                value={formData.amount || ""}
-                onChange={handleInputChange}
+                value={amountStr}
+                onChange={(e) => setAmountStr(sanitizeAmountInput(e.target.value))}
+                onBlur={() => {
+                  const formatted = formatAmountForBlur(amountStr);
+                  setAmountStr(formatted);
+                  setFormData((prev) => ({
+                    ...prev,
+                    amount: parseFloat(formatted) || 0,
+                  }));
+                }}
                 required
-                min="0"
-                step="0.01"
                 placeholder="0.00"
               />
             </div>
@@ -352,20 +373,25 @@ function EditExpenses() {
               <label htmlFor="category">
                 Category <span className="required">*</span>
               </label>
-              <select
-                id="category"
-                name="category"
-                value={formData.category ?? ""}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+              <ReactSelect
+                classNamePrefix="cat-select"
+                isSearchable
+                options={categoryOptions}
+                value={
+                  formData.category != null
+                    ? categoryOptions.find(
+                        (o) => o.value === String(formData.category)
+                      ) ?? null
+                    : null
+                }
+                onChange={(opt: SingleValue<{ value: string; label: string }>) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    category: opt ? Number(opt.value) : null,
+                  }))
+                }
+                placeholder="Select a category"
+              />
             </div>
 
             <div className="form-group">

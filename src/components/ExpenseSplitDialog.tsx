@@ -1,24 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Button,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "./chatGPTUIComponents";
+import ReactSelect, { SingleValue } from "react-select";
+import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 import { replaceExpenseSplits } from "../services/expenseSplitService";
 import type { ExpenseSplit } from "../types/expenseSplit";
 import type { Category } from "../services/categoryService";
 
 export interface SplitRow {
   description: string;
-  amount: number;
+  amount: string;
   category: number;
 }
 
@@ -34,7 +31,11 @@ interface ExpenseSplitDialogProps {
 }
 
 function toRow(s: ExpenseSplit): SplitRow {
-  return { description: s.description, amount: s.amount, category: s.category };
+  return {
+    description: s.description,
+    amount: Number(s.amount).toFixed(2),
+    category: s.category,
+  };
 }
 
 export function ExpenseSplitDialog({
@@ -48,23 +49,48 @@ export function ExpenseSplitDialog({
   onCancel,
 }: ExpenseSplitDialogProps) {
   const [rows, setRows] = useState<SplitRow[]>(() =>
-    initialSplits.length > 0 ? initialSplits.map(toRow) : [{ description: "", amount: parentAmount, category: categories[0]?.category_I ?? 1 }]
+    initialSplits.length > 0
+      ? initialSplits.map(toRow)
+      : [
+          {
+            description: "",
+            amount: parentAmount.toFixed(2),
+            category: categories[0]?.category_I ?? 1,
+          },
+        ]
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const categoryOptions = useMemo(
+    () =>
+      categories
+        .filter((c) => c.name !== "Split")
+        .map((c) => ({
+          value: String(c.category_I),
+          label: c.name,
+        })),
+    [categories]
+  );
 
   useEffect(() => {
     if (open) {
       setRows(
         initialSplits.length > 0
           ? initialSplits.map(toRow)
-          : [{ description: "", amount: parentAmount, category: categories[0]?.category_I ?? 1 }]
+          : [
+              {
+                description: "",
+                amount: parentAmount.toFixed(2),
+                category: categories[0]?.category_I ?? 1,
+              },
+            ]
       );
       setError(null);
     }
   }, [open, expenseId, parentAmount, initialSplits, categories]);
 
-  const sum = rows.reduce((a, r) => a + r.amount, 0);
+  const sum = rows.reduce((a, r) => a + (parseFloat(r.amount) || 0), 0);
   const remaining = parentAmount - sum;
   const isValid = Math.abs(remaining) < 0.005;
 
@@ -77,7 +103,11 @@ export function ExpenseSplitDialog({
   function addRow() {
     setRows((prev) => [
       ...prev,
-      { description: "", amount: remaining > 0 ? remaining : 0.01, category: categories[0]?.category_I ?? 1 },
+      {
+        description: "",
+        amount: (remaining > 0 ? remaining : 0.01).toFixed(2),
+        category: categories[0]?.category_I ?? 1,
+      },
     ]);
   }
 
@@ -92,7 +122,7 @@ export function ExpenseSplitDialog({
     try {
       const items = rows.map((r) => ({
         description: r.description.trim(),
-        amount: r.amount,
+        amount: parseFloat(r.amount) || 0,
         category: r.category,
       }));
       const result = await replaceExpenseSplits(expenseId, items);
@@ -150,29 +180,52 @@ export function ExpenseSplitDialog({
                     </td>
                     <td className="p-1 text-right">
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
                         value={row.amount}
-                        onChange={(e) => updateRow(idx, "amount", parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          updateRow(idx, "amount", sanitizeAmountInput(e.target.value))
+                        }
+                        onBlur={() => {
+                          updateRow(idx, "amount", formatAmountForBlur(row.amount));
+                        }}
                         className="w-24 text-right border-gray-200"
                       />
                     </td>
                     <td className="p-1">
-                      <Select
-                        value={String(row.category)}
-                        onValueChange={(v) => updateRow(idx, "category", Number(v))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.filter((c) => c.name !== "Split").map((c) => (
-                            <SelectItem key={c.category_I} value={String(c.category_I)}>
-                              {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <ReactSelect
+                        classNamePrefix="cat-select"
+                        isSearchable
+                        options={categoryOptions}
+                        value={
+                          categoryOptions.find(
+                            (o) => o.value === String(row.category)
+                          ) ?? null
+                        }
+                        onChange={(
+                          opt: SingleValue<{ value: string; label: string }>
+                        ) =>
+                          updateRow(
+                            idx,
+                            "category",
+                            Number(opt?.value ?? row.category)
+                          )
+                        }
+                        styles={{
+                          container: (base) => ({ ...base, minWidth: 140 }),
+                          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                          valueContainer: (base) => ({
+                            ...base,
+                            padding: "0 6px",
+                          }),
+                          control: (base) => ({
+                            ...base,
+                            minHeight: 30,
+                            borderRadius: 6,
+                            borderColor: "#d1d5db",
+                          }),
+                        }}
+                        menuPortalTarget={document.body}
+                      />
                     </td>
                     <td className="p-1">
                       <Button
