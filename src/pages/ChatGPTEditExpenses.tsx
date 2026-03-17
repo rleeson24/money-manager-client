@@ -56,7 +56,7 @@ export default function ExpensesEditor() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [month, setMonth] = useState("2026-01");
+  const [month, setMonth] = useState("2026-" + (new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [dirtyCells, setDirtyCells] = useState<CellState>({});
   const [errorCells, setErrorCells] = useState<CellState>({});
   const [selectedExpenses, setSelectedExpenses] = useState<Set<number>>(
@@ -113,6 +113,18 @@ export default function ExpensesEditor() {
       ],
     [categories]
   );
+
+  // Width for Method/Category selects: fit longest option (approx 8px per char + padding)
+  const paymentMethodSelectWidth = useMemo(() => {
+    if (paymentMethodOptions.length === 0) return 100;
+    const maxLen = Math.max(...paymentMethodOptions.map((o) => o.label.length));
+    return Math.min(360, 40 + maxLen * 10);
+  }, [paymentMethodOptions]);
+  const categorySelectWidth = useMemo(() => {
+    if (categoryOptions.length === 0) return 100;
+    const maxLen = Math.max(...categoryOptions.map((o) => o.label.length));
+    return Math.min(320, 24 + maxLen * 8);
+  }, [categoryOptions]);
 
   // Draft row for "add new" - not in database until user fills and blurs
   const today = () => new Date().toISOString().split("T")[0];
@@ -620,17 +632,19 @@ export default function ExpensesEditor() {
               </th>
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none"
+                style={{ width: paymentMethodSelectWidth + 10, minWidth: paymentMethodSelectWidth + 10 }}
                 onClick={() => handleSort("paymentMethod")}
               >
                 Method {getSortIcon("paymentMethod")}
               </th>
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none"
+                style={{ width: categorySelectWidth + 10, minWidth: categorySelectWidth + 10 }}
                 onClick={() => handleSort("category")}
               >
                 Category {getSortIcon("category")}
               </th>
-              <th className="w-12 text-center">Split</th>
+              <th className="w-12 text-center" style={{ width: 48 }}>Split</th>
               <th className="w-8 px-1" aria-label="Expand splits" />
               <th
                 className="cursor-pointer hover:bg-gray-100 select-none w-32"
@@ -729,7 +743,7 @@ export default function ExpensesEditor() {
                     {cellBadge(id, "amount")}
                   </div>
                 </td>
-                <td>
+                <td style={{ width: paymentMethodSelectWidth + 10, minWidth: paymentMethodSelectWidth + 10 }}>
                   <ReactSelect
                     classNamePrefix="pm-select"
                     isClearable
@@ -750,7 +764,7 @@ export default function ExpensesEditor() {
                       )
                     }
                     styles={{
-                      container: (base) => ({ ...base, minWidth: 140 }),
+                      container: (base) => ({ ...base, minWidth: paymentMethodSelectWidth, width: paymentMethodSelectWidth }),
                       menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                       valueContainer: (base) => ({
                         ...base,
@@ -767,7 +781,7 @@ export default function ExpensesEditor() {
                   />
                   {cellBadge(id, "paymentMethod")}
                 </td>
-                <td>
+                <td style={{ width: categorySelectWidth + 10, minWidth: categorySelectWidth + 10 }}>
                   <ReactSelect
                     classNamePrefix="cat-select"
                     isClearable
@@ -789,7 +803,7 @@ export default function ExpensesEditor() {
                     }
                     isDisabled={exp.isSplit ?? false}
                     styles={{
-                      container: (base) => ({ ...base, minWidth: 140 }),
+                      container: (base) => ({ ...base, minWidth: categorySelectWidth, width: categorySelectWidth }),
                       menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                       valueContainer: (base) => ({
                         ...base,
@@ -806,7 +820,7 @@ export default function ExpensesEditor() {
                   />
                   {cellBadge(id, "category")}
                 </td>
-                <td className="w-12 text-center">
+                <td className="text-center" style={{ width: 48 }}>
                   <input
                     type="checkbox"
                     checked={exp.isSplit ?? false}
@@ -935,7 +949,7 @@ export default function ExpensesEditor() {
                   className="text-right bg-white/80 placeholder:italic placeholder:text-gray-400"
                 />
               </td>
-              <td>
+              <td style={{ width: paymentMethodSelectWidth + 10, minWidth: paymentMethodSelectWidth + 10 }}>
                 <ReactSelect
                   classNamePrefix="pm-select"
                   isClearable
@@ -955,7 +969,7 @@ export default function ExpensesEditor() {
                     )
                   }
                   styles={{
-                    container: (base) => ({ ...base, minWidth: 140 }),
+                    container: (base) => ({ ...base, minWidth: paymentMethodSelectWidth, width: paymentMethodSelectWidth }),
                     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                     valueContainer: (base) => ({
                       ...base,
@@ -971,7 +985,7 @@ export default function ExpensesEditor() {
                   menuPortalTarget={document.body}
                 />
               </td>
-              <td>
+              <td style={{ width: categorySelectWidth + 10, minWidth: categorySelectWidth + 10 }}>
                 <ReactSelect
                   classNamePrefix="cat-select"
                   isClearable
@@ -991,7 +1005,7 @@ export default function ExpensesEditor() {
                     )
                   }
                   styles={{
-                    container: (base) => ({ ...base, minWidth: 140 }),
+                    container: (base) => ({ ...base, minWidth: categorySelectWidth, width: categorySelectWidth }),
                     menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                     valueContainer: (base) => ({
                       ...base,
@@ -1007,7 +1021,7 @@ export default function ExpensesEditor() {
                   menuPortalTarget={document.body}
                 />
               </td>
-              <td className="w-12" />
+              <td style={{ width: 48 }} />
               <td className="w-8 px-1" />
               <td className="w-32">
                 <Input

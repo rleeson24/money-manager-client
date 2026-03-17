@@ -5,13 +5,7 @@ import {
   Card,
   CardContent,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Button,
-  SearchableSelect,
 } from "../components/chatGPTUIComponents";
 import { getExpenses, updateExpense, type Expense } from "../services/expenseService";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
@@ -77,7 +71,7 @@ export default function CreditCardExpenses() {
         
         // Find and set "Discover" as default
         const discover = data.find((pm: PaymentMethod) => 
-          pm.PaymentMethod.toLowerCase() === "discover"
+          pm.PaymentMethod.toLowerCase() === "discover credit"
         );
         if (discover) {
           setSelectedPaymentMethod(discover.id);
