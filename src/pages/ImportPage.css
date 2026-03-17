@@ -57,7 +57,43 @@
   gap: 0.25rem;
 }
 
-.import-section-row input[type="file"] {
+/* File input area – stand out and easy to find */
+.import-file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  background: linear-gradient(135deg, #e8f4fc 0%, #d6ebf9 100%);
+  border: 2px solid #0066cc;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #004080;
+  box-shadow: 0 1px 3px rgba(0, 102, 204, 0.15);
+}
+
+.import-file-label:hover {
+  background: linear-gradient(135deg, #d6ebf9 0%, #c5e2f7 100%);
+  box-shadow: 0 2px 6px rgba(0, 102, 204, 0.2);
+}
+
+.import-file-label:has(input:disabled) {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.import-file-label-text {
+  white-space: nowrap;
+}
+
+.import-file-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.import-file-input-wrap input[type="file"] {
+  font-size: 0.9rem;
+  font-weight: 500;
   max-width: 280px;
 }
 

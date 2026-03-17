@@ -180,18 +180,20 @@ export default function ImportPage() {
                   <div key={section.id} className="import-section">
                     <h3>{section.label}</h3>
                     <div className="import-section-row">
-                      <label>
-                        File (OFX/QFX/CSV):
-                        <input
-                          type="file"
-                          accept=".ofx,.qfx,.csv"
-                          disabled={isImporting}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleImport(section.id, file);
-                            e.target.value = "";
-                          }}
-                        />
+                      <label className="import-file-label">
+                        <span className="import-file-label-text">File (OFX/QFX/CSV):</span>
+                        <span className="import-file-input-wrap">
+                          <input
+                            type="file"
+                            accept=".ofx,.qfx,.csv"
+                            disabled={isImporting}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleImport(section.id, file);
+                              e.target.value = "";
+                            }}
+                          />
+                        </span>
                       </label>
                       <label>
                         Payment method:
@@ -200,6 +202,7 @@ export default function ImportPage() {
                           onChange={(e) =>
                             handlePaymentMethodChange(section.id, Number(e.target.value))
                           }
+                          className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:pointer-events-none"
                         >
                           {paymentMethods.map((pm) => (
                             <option key={pm.id} value={pm.id}>
