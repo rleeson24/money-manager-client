@@ -10,6 +10,7 @@ import {
 import { getExpenses, updateExpense, type Expense } from "../services/expenseService";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
+import { isAbortError } from "../config/api";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 
 interface CellState {
@@ -33,14 +34,15 @@ export default function CreditCardExpenses() {
   const [excludedExpenses, setExcludedExpenses] = useState<Set<number>>(new Set());
   const [dirtyCells, setDirtyCells] = useState<CellState>({});
   const [errorCells, setErrorCells] = useState<CellState>({});
-  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [sortColumn, setSortColumn] = useState<SortColumn>("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingAmount, setEditingAmount] = useState<Record<number, string>>({});
   const [focusedAmountId, setFocusedAmountId] = useState<number | null>(null);
   const undoStack = useRef<Expense[][]>([]);
   const debounceRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
+  const loadExpensesAbortRef = useRef<AbortController | null>(null);
 
   const navigate = useNavigate();
 
@@ -64,13 +66,16 @@ export default function CreditCardExpenses() {
 
   // Load payment methods and set default to "Discover"
   useEffect(() => {
+    const ac = new AbortController();
+
     const loadPaymentMethods = async () => {
       try {
-        const data = await getPaymentMethods();
+        const data = await getPaymentMethods(ac.signal);
+        if (ac.signal.aborted) return;
         setPaymentMethods(data);
-        
+
         // Find and set "Discover" as default
-        const discover = data.find((pm: PaymentMethod) => 
+        const discover = data.find((pm: PaymentMethod) =>
           pm.PaymentMethod.toLowerCase() === "discover credit"
         );
         if (discover) {
@@ -79,38 +84,49 @@ export default function CreditCardExpenses() {
           // Fallback to first payment method if Discover not found
           setSelectedPaymentMethod(data[0].id);
         }
-      } catch (err) {
+      } catch (err: unknown) {
+        if (ac.signal.aborted || isAbortError(err)) return;
         console.error("Error loading payment methods:", err);
         setError("Failed to load payment methods");
       }
     };
 
-    loadPaymentMethods();
+    void loadPaymentMethods();
+    return () => ac.abort();
   }, []);
 
   // Load categories
   useEffect(() => {
+    const ac = new AbortController();
+
     const loadCategories = async () => {
       try {
-        const data = await getCategories();
+        const data = await getCategories(ac.signal);
+        if (ac.signal.aborted) return;
         setCategories(data);
-      } catch (err) {
+      } catch (err: unknown) {
+        if (ac.signal.aborted || isAbortError(err)) return;
         console.error("Error loading categories:", err);
       }
     };
 
-    loadCategories();
+    void loadCategories();
+    return () => ac.abort();
   }, []);
 
   // Load expenses when payment method is selected
   useEffect(() => {
     if (selectedPaymentMethod !== null) {
-      loadExpenses();
+      void loadExpenses();
     }
   }, [selectedPaymentMethod]);
 
   const loadExpenses = async () => {
     if (selectedPaymentMethod === null) return;
+
+    loadExpensesAbortRef.current?.abort();
+    const ac = new AbortController();
+    loadExpensesAbortRef.current = ac;
 
     setLoading(true);
     setError(null);
@@ -119,15 +135,20 @@ export default function CreditCardExpenses() {
       const data = await getExpenses({
         paymentMethod: selectedPaymentMethod,
         datePaidNull: true,
+        signal: ac.signal,
       });
+      if (ac.signal.aborted) return;
       setExpenses(data);
       // Clear excluded expenses when loading new data
       setExcludedExpenses(new Set());
-    } catch (err) {
+    } catch (err: unknown) {
+      if (ac.signal.aborted || isAbortError(err)) return;
       console.error("Error loading expenses:", err);
       setError("Failed to load expenses");
     } finally {
-      setLoading(false);
+      if (!ac.signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 

@@ -12,7 +12,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../components/chatGPTUIComponents";
-import { getExpenses, updateExpense, bulkUpdateExpenses, bulkDeleteExpenses, UpdateConflictError } from "../services/expenseService";
+import { getExpenses, 
+  updateExpense,
+  bulkUpdateExpenses,
+  bulkDeleteExpenses,
+  UpdateConflictError,
+  createExpense } from "../services/expenseService";
 import { ExpenseSplitReadonlyGrid } from "../components/ExpenseSplitReadonlyGrid";
 import { ExpenseSplitDialog } from "../components/ExpenseSplitDialog";
 import type { ExpenseSplit } from "../types/expenseSplit";
@@ -20,6 +25,7 @@ import Swal from "sweetalert2";
 import type { Expense } from "../types/expense";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
+import { isAbortError } from "../config/api";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 import "./ChatGPTEditExpenses.css";
 
@@ -52,6 +58,67 @@ interface BulkUpdateForm {
   setDatePaidToNull?: boolean;
 }
 
+type DraftFocusField =
+  | "date"
+  | "description"
+  | "amount"
+  | "paymentMethod"
+  | "category";
+
+function snapshotActiveDraftFocusField(
+  draftRowEl: HTMLTableRowElement | null
+): DraftFocusField {
+  const active = document.activeElement;
+  if (
+    !active ||
+    !(active instanceof HTMLElement) ||
+    !draftRowEl ||
+    !draftRowEl.contains(active)
+  ) {
+    return "description";
+  }
+  const scoped = active.closest("[data-draft-focus]");
+  if (!scoped || !draftRowEl.contains(scoped)) return "description";
+  const raw = scoped.getAttribute("data-draft-focus");
+  if (
+    raw === "date" ||
+    raw === "description" ||
+    raw === "amount" ||
+    raw === "paymentMethod" ||
+    raw === "category"
+  ) {
+    return raw;
+  }
+  return "description";
+}
+
+function focusWithinFieldHost(host: Element | null, field: DraftFocusField): void {
+  if (!host) return;
+
+  if (field === "paymentMethod" || field === "category") {
+    const input = host.querySelector<HTMLInputElement>("input:not([type=hidden])");
+    input?.focus();
+    return;
+  }
+
+  const inputEl = host.querySelector<HTMLElement>(
+    "input:not([disabled]):not([type=hidden]), textarea:not([disabled])"
+  );
+  if (!inputEl) return;
+  inputEl.focus();
+  if (field === "date" && inputEl instanceof HTMLInputElement) {
+    inputEl.select?.();
+  }
+}
+
+function focusExpenseRowField(expenseRowEl: HTMLTableRowElement | null, field: DraftFocusField): void {
+  if (!expenseRowEl) return;
+  focusWithinFieldHost(
+    expenseRowEl.querySelector(`[data-expense-focus="${field}"]`),
+    field
+  );
+}
+
 export default function ExpensesEditor() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -62,8 +129,8 @@ export default function ExpensesEditor() {
   const [selectedExpenses, setSelectedExpenses] = useState<Set<number>>(
     new Set()
   );
-  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [sortColumn, setSortColumn] = useState<SortColumn>("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
   const [bulkUpdateForm, setBulkUpdateForm] = useState<BulkUpdateForm>({});
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
@@ -76,7 +143,15 @@ export default function ExpensesEditor() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [editingAmount, setEditingAmount] = useState<Record<number, string>>({});
   const [focusedAmountId, setFocusedAmountId] = useState<number | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const undoStack = useRef<Expense[][]>([]);
+  const hadDraftContent = useRef(false);
+  const pendingPostSaveFocusRef = useRef<{
+    expenseId: number | null;
+    field: DraftFocusField;
+  } | null>(null);
+  const draftRowRef = useRef<HTMLTableRowElement | null>(null);
+  const expensesTableRef = useRef<HTMLTableElement | null>(null);
   const patchDebounceRef = useRef<
     Record<
       string,
@@ -85,7 +160,6 @@ export default function ExpensesEditor() {
       }
     >
   >({});
-  const nextTempIdRef = useRef(-1);
 
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -134,14 +208,12 @@ export default function ExpensesEditor() {
     amount: string;
     paymentMethod?: number | null;
     category?: number | null;
-    datePaid: string;
   }>(() => ({
     date: today(),
     description: "",
     amount: "",
     paymentMethod: undefined,
     category: undefined,
-    datePaid: "",
   }));
 
   // Debounce search term by 1 second (lodash debounce)
@@ -154,22 +226,43 @@ export default function ExpensesEditor() {
     return () => setDebouncedSearchTermDebounced.cancel();
   }, [searchTerm, setDebouncedSearchTermDebounced]);
 
+  /** After draft save completes, focus the same logical field on the row that was just saved. */
   useEffect(() => {
-    let cancelled = false;
+    if (isSavingDraft) return;
+    const pending = pendingPostSaveFocusRef.current;
+    pendingPostSaveFocusRef.current = null;
+    if (pending == null || pending.expenseId == null) return;
+    const row = expensesTableRef.current?.querySelector<HTMLTableRowElement>(
+      `tr[data-expense-id="${pending.expenseId}"]`
+    );
+    if (!row) return;
+    const { field } = pending;
+    const t = window.setTimeout(() => {
+      row.scrollIntoView({ block: "nearest", inline: "nearest" });
+      focusExpenseRowField(row, field);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [isSavingDraft]);
+
+  useEffect(() => {
+    const ac = new AbortController();
     const search = debouncedSearchTerm.trim() || undefined;
     Promise.all([
-      getExpenses({ month, search }),
-      getCategories(),
-      getPaymentMethods(),
-    ]).then(([expensesData, categoriesData, paymentMethodsData]) => {
-      if (cancelled) return;
-      setExpenses(expensesData);
-      setCategories(categoriesData);
-      setPaymentMethods(paymentMethodsData);
-    });
-    return () => {
-      cancelled = true;
-    };
+      getExpenses({ month, search, signal: ac.signal }),
+      getCategories(ac.signal),
+      getPaymentMethods(ac.signal),
+    ])
+      .then(([expensesData, categoriesData, paymentMethodsData]) => {
+        if (ac.signal.aborted) return;
+        setExpenses(expensesData);
+        setCategories(categoriesData);
+        setPaymentMethods(paymentMethodsData);
+      })
+      .catch((err: unknown) => {
+        if (ac.signal.aborted || isAbortError(err)) return;
+        console.error("Failed to load expenses page data:", err);
+      });
+    return () => ac.abort();
   }, [month, debouncedSearchTerm]);
 
   useEffect(() => {
@@ -492,34 +585,60 @@ export default function ExpensesEditor() {
     const amountValid =
       amountTrimmed !== "" && !Number.isNaN(parseFloat(draftNewRow.amount));
     return (
-      (draftNewRow.description?.trim() ?? "") !== "" ||
-      amountValid ||
+      ((draftNewRow.description?.trim() ?? "") !== "" ||
+      amountValid) &&
       (draftNewRow.date?.trim() ?? "") !== ""
     );
   }
 
-  function commitDraftRow() {
+  useEffect(() => {
+    if (isSavingDraft) return;
+    if(!hasDraftContent()) {
+      hadDraftContent.current = false;
+      return;
+    }
+    if(!hadDraftContent.current) {
+      hadDraftContent.current = true;
+      commitDraftRow();
+    }
+  }, [isSavingDraft, draftNewRow]);
+
+  async function commitDraftRow() {
     if (!hasDraftContent()) return;
-    const tempId = nextTempIdRef.current--;
-    const amountNum = parseFloat(draftNewRow.amount) || 0;
-    const newExpense: Expense = {
-      id: tempId,
-      date: draftNewRow.date || `${month}-01T00:00:00`,
-      description: draftNewRow.description?.trim() ?? "",
-      amount: amountNum,
-      paymentMethod: draftNewRow.paymentMethod ?? null,
-      category: draftNewRow.category ?? null,
-      datePaid: draftNewRow.datePaid || null,
+    pendingPostSaveFocusRef.current = {
+      expenseId: null,
+      field: snapshotActiveDraftFocusField(draftRowRef.current),
     };
-    setExpenses((prev) => [...prev, newExpense]);
-    setDraftNewRow({
-      date: today(),
-      description: "",
-      amount: "",
-      paymentMethod: undefined,
-      category: undefined,
-      datePaid: "",
-    });
+    setIsSavingDraft(true);
+    const amountNum = parseFloat(draftNewRow.amount) || 0;
+    try {
+      const payload = {
+        date: draftNewRow.date || `${month}-01T00:00:00`,
+        description: draftNewRow.description?.trim() ?? "",
+        amount: amountNum,
+        paymentMethod: draftNewRow.paymentMethod ?? null,
+        category: draftNewRow.category ?? null,
+      };
+      const savedExpense = await createExpense(payload);
+      if (pendingPostSaveFocusRef.current) {
+        pendingPostSaveFocusRef.current.expenseId = expIdNum(savedExpense);
+      }
+      setExpenses((prev) => [...prev, savedExpense]);
+      setDraftNewRow({
+        date: today(),
+        description: "",
+        amount: "",
+        paymentMethod: undefined,
+        category: undefined,
+      });
+      hadDraftContent.current = false;
+    } catch (error) {
+      pendingPostSaveFocusRef.current = null;
+      console.error("Error creating expense:", error);
+      setError("Failed to create expense");
+    } finally {
+      setIsSavingDraft(false);
+    }
   }
 
   function updateDraft(
@@ -598,7 +717,7 @@ export default function ExpensesEditor() {
           )}
         </div>
 
-        <table className="expenses-table w-full text-sm">
+        <table ref={expensesTableRef} className="expenses-table w-full text-sm">
           <thead className="sticky top-0 bg-background border-b">
             <tr>
               <th>
@@ -659,7 +778,7 @@ export default function ExpensesEditor() {
               const id = expIdNum(exp);
               return (
               <React.Fragment key={id}>
-              <tr className="border-b">
+              <tr className="border-b" data-expense-id={id}>
                 <td>
                   <input
                     type="checkbox"
@@ -671,6 +790,7 @@ export default function ExpensesEditor() {
                   />
                 </td>
                 <td className="w-32">
+                  <div data-expense-focus="date">
                   <div className="flex items-center">
                     <Input
                       data-cell={`${r}-0`}
@@ -682,8 +802,10 @@ export default function ExpensesEditor() {
                     />
                     {cellBadge(id, "date")}
                   </div>
+                  </div>
                 </td>
                 <td>
+                  <div data-expense-focus="description">
                   <div className="flex items-center">
                     <Input
                       data-cell={`${r}-1`}
@@ -694,8 +816,10 @@ export default function ExpensesEditor() {
                     />
                     {cellBadge(id, "description")}
                   </div>
+                  </div>
                 </td>
                 <td className="w-28 text-right">
+                  <div data-expense-focus="amount">
                   <div className="flex items-center justify-end">
                     <Input
                       data-cell={`${r}-2`}
@@ -742,8 +866,10 @@ export default function ExpensesEditor() {
                     />
                     {cellBadge(id, "amount")}
                   </div>
+                  </div>
                 </td>
                 <td style={{ width: paymentMethodSelectWidth + 10, minWidth: paymentMethodSelectWidth + 10 }}>
+                  <div data-expense-focus="paymentMethod">
                   <ReactSelect
                     classNamePrefix="pm-select"
                     isClearable
@@ -780,8 +906,10 @@ export default function ExpensesEditor() {
                     menuPortalTarget={document.body}
                   />
                   {cellBadge(id, "paymentMethod")}
+                  </div>
                 </td>
                 <td style={{ width: categorySelectWidth + 10, minWidth: categorySelectWidth + 10 }}>
+                  <div data-expense-focus="category">
                   <ReactSelect
                     classNamePrefix="cat-select"
                     isClearable
@@ -819,6 +947,7 @@ export default function ExpensesEditor() {
                     menuPortalTarget={document.body}
                   />
                   {cellBadge(id, "category")}
+                  </div>
                 </td>
                 <td className="text-center" style={{ width: 48 }}>
                   <input
@@ -904,20 +1033,15 @@ export default function ExpensesEditor() {
               )}
               </React.Fragment>
             ); })}
-            {/* New row placeholder - not in database until Add is clicked */}
-            <tr className="border-b border-dashed bg-gray-50/70" aria-label="New expense row">
-              <td className="align-middle">
-                <Button
-                  type="button"
-                  variant="primary"
-                  disabled={!hasDraftContent()}
-                  onClick={commitDraftRow}
-                  className="!px-2 text-xs"
-                >
-                  Add
-                </Button>
-              </td>
+            {/* Draft row */}
+            <tr
+              ref={draftRowRef}
+              className="border-b border-dashed bg-gray-50/70"
+              aria-label="New expense row"
+            >
+              <td className="align-middle" />
               <td className="w-32">
+                <div data-draft-focus="date">
                 <Input
                   type="date"
                   placeholder="Date"
@@ -925,17 +1049,23 @@ export default function ExpensesEditor() {
                   onChange={(e) => updateDraft("date", e.target.value)}
                   onFocus={(e) => e.target.select()}
                   className="bg-white/80 placeholder:italic"
+                  disabled={isSavingDraft}
                 />
+                </div>
               </td>
               <td>
+                <div data-draft-focus="description">
                 <Input
                   placeholder="Add new expense..."
                   value={draftNewRow.description}
                   onChange={(e) => updateDraft("description", e.target.value)}
                   className="bg-white/80 placeholder:italic placeholder:text-gray-400"
+                  disabled={isSavingDraft}
                 />
+                </div>
               </td>
               <td className="w-28 text-right">
+                <div data-draft-focus="amount">
                 <Input
                   type="text"
                   value={draftNewRow.amount}
@@ -947,9 +1077,12 @@ export default function ExpensesEditor() {
                   }}
                   placeholder="0.00"
                   className="text-right bg-white/80 placeholder:italic placeholder:text-gray-400"
+                  disabled={isSavingDraft}
                 />
+                </div>
               </td>
               <td style={{ width: paymentMethodSelectWidth + 10, minWidth: paymentMethodSelectWidth + 10 }}>
+                <div data-draft-focus="paymentMethod">
                 <ReactSelect
                   classNamePrefix="pm-select"
                   isClearable
@@ -983,9 +1116,12 @@ export default function ExpensesEditor() {
                     }),
                   }}
                   menuPortalTarget={document.body}
+                  isDisabled={isSavingDraft}
                 />
+                </div>
               </td>
               <td style={{ width: categorySelectWidth + 10, minWidth: categorySelectWidth + 10 }}>
+                <div data-draft-focus="category">
                 <ReactSelect
                   classNamePrefix="cat-select"
                   isClearable
@@ -1019,25 +1155,19 @@ export default function ExpensesEditor() {
                     }),
                   }}
                   menuPortalTarget={document.body}
+                  isDisabled={isSavingDraft}
                 />
+                </div>
               </td>
               <td style={{ width: 48 }} />
               <td className="w-8 px-1" />
-              <td className="w-32">
-                <Input
-                  type="date"
-                  value={draftNewRow.datePaid}
-                  onChange={(e) => updateDraft("datePaid", e.target.value)}
-                  onFocus={(e) => e.target.select()}
-                  className="bg-white/80 placeholder:italic"
-                />
-              </td>
+              <td className="w-32" />
             </tr>
           </tbody>
         </table>
 
         <p className="text-xs text-muted-foreground mt-2">
-          ⚠ Unsaved · ❌ Error · Ctrl+Z Undo · Bottom row: new expense (click Add to save)
+          ⚠ Unsaved · ❌ Error · Ctrl+Z Undo · Bottom row: new expense (saves when you enter date, description, or amount)
         </p>
       </CardContent>
 

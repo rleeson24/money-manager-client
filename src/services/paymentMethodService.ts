@@ -20,9 +20,9 @@ const mockPaymentMethods: PaymentMethod[] = [
  * Get all payment methods.
  * When USE_API: GET /api/payment-methods
  */
-export async function getPaymentMethods(): Promise<PaymentMethod[]> {
+export async function getPaymentMethods(signal?: AbortSignal): Promise<PaymentMethod[]> {
   if (USE_API) {
-    const data = await apiJson<PaymentMethod[]>("/api/payment-methods", {}, "Failed to fetch payment methods");
+    const data = await apiJson<PaymentMethod[]>("/api/payment-methods", { signal }, "Failed to fetch payment methods");
     return Array.isArray(data) ? data : [];
   }
   return [...mockPaymentMethods];

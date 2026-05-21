@@ -30,9 +30,9 @@ const mockCategories: Category[] = [
  * Get all categories.
  * When USE_API: GET /api/categories
  */
-export async function getCategories(): Promise<Category[]> {
+export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
   if (USE_API) {
-    const data = await apiJson<Category[]>("/api/categories", {}, "Failed to fetch categories");
+    const data = await apiJson<Category[]>("/api/categories", { signal }, "Failed to fetch categories");
     return Array.isArray(data) ? data : [];
   }
   return [...mockCategories];

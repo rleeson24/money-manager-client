@@ -81,6 +81,7 @@ export async function getExpenses(params?: {
   search?: string;
   paymentMethod?: number;
   datePaidNull?: boolean;
+  signal?: AbortSignal;
 }): Promise<Expense[]> {
   if (USE_API) {
     const searchParams = new URLSearchParams();
@@ -88,7 +89,7 @@ export async function getExpenses(params?: {
     if (params?.paymentMethod != null) searchParams.set("paymentMethod", String(params.paymentMethod));
     if (params?.datePaidNull != null) searchParams.set("datePaidNull", String(params.datePaidNull));
     const qs = searchParams.toString();
-    const data = await apiJson<ApiExpense[]>(`/api/expenses${qs ? `?${qs}` : ""}`, {}, "Failed to fetch expenses");
+    const data = await apiJson<ApiExpense[]>(`/api/expenses${qs ? `?${qs}` : ""}`, { signal: params?.signal }, "Failed to fetch expenses");
     let list = (Array.isArray(data) ? data : []).map(toExpense);
     if (params?.search?.trim()) {
       const term = params.search.trim().toLowerCase();

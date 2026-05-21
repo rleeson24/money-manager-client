@@ -137,9 +137,10 @@ export function Dialog({ open, children }: DialogProps) {
 }
 
 export function DialogContent({ children, className = "" }: CardProps) {
+  const widthClass = className.includes("max-w-") ? "" : "max-w-lg";
   return (
     <div
-      className={`bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4 ${className}`}
+      className={`bg-white rounded-xl shadow-2xl p-6 w-full ${widthClass} max-h-[90vh] overflow-y-auto mx-4 ${className}`}
       style={{ position: 'relative', zIndex: 10000 }}
       onClick={(e) => e.stopPropagation()}
     >

@@ -144,7 +144,7 @@ export function ExpenseSplitDialog({
 
   return (
     <Dialog open={open}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Edit split expenses</DialogTitle>
         </DialogHeader>
@@ -157,14 +157,14 @@ export function ExpenseSplitDialog({
               <span className="text-sm text-amber-600">Amounts must add up to the total</span>
             )}
           </div>
-          <div className="w-full overflow-x-auto border rounded-lg overflow-hidden">
-            <table className="text-sm table-auto min-w-0 w-full md:w-auto">
+          <div className="border rounded-lg">
+            <table className="text-sm w-full">
               <thead>
                 <tr className="bg-gray-100 border-b">
-                  <th className="text-left p-2 font-medium min-w-[20rem]">Description</th>
+                  <th className="text-left p-2 font-medium">Description</th>
                   <th className="text-right p-2 w-28 font-medium">Amount</th>
-                  <th className="text-left p-2 min-w-[8rem] font-medium">Category</th>
-                  <th className="w-10" />
+                  <th className="text-left p-2 w-48 font-medium">Category</th>
+                  <th className="w-20 p-2" />
                 </tr>
               </thead>
               <tbody>
@@ -211,7 +211,7 @@ export function ExpenseSplitDialog({
                           )
                         }
                         styles={{
-                          container: (base) => ({ ...base, minWidth: 140 }),
+                          container: (base) => ({ ...base, width: "100%" }),
                           menuPortal: (base) => ({ ...base, zIndex: 9999 }),
                           valueContainer: (base) => ({
                             ...base,

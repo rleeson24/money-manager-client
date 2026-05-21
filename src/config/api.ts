@@ -7,6 +7,17 @@ export const USE_API = import.meta.env.VITE_USE_API === "true";
 /** Base URL for API requests (e.g. empty for same-origin, or https://localhost:7xxx when using Aspire). */
 export const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
+/** True when fetch was aborted (StrictMode cleanup or navigation). */
+export function isAbortError(err: unknown): boolean {
+  return (
+    (err instanceof DOMException && err.name === "AbortError") ||
+    (typeof err === "object" &&
+      err !== null &&
+      "name" in err &&
+      (err as { name: string }).name === "AbortError")
+  );
+}
+
 /** Thrown by apiJson when the response is not ok. Use status and body for 409 or other handling. */
 export class ApiError extends Error {
   constructor(

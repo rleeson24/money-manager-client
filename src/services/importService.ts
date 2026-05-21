@@ -15,16 +15,24 @@ export interface LastImportDatesItem {
 /**
  * POST /api/import/file — upload file and import transactions.
  */
+export type ImportSource =
+  | "Arvest"
+  | "AbfcuSavings"
+  | "AbfcuChecking"
+  | "DiscoverSavings"
+  | "DiscoverChecking"
+  | "DiscoverCredit";
+
 export async function importFromFile(
   file: File,
   format: string,
-  sourceKey: string,
+  importSource: ImportSource,
   paymentMethodId: number
 ): Promise<ImportResult> {
   const form = new FormData();
   form.append("file", file);
   form.append("format", format);
-  form.append("sourceKey", sourceKey);
+  form.append("importSource", importSource);
   form.append("paymentMethodId", String(paymentMethodId));
 
   const res = await fetch(`${API_BASE}/api/import/file`, {
@@ -76,15 +84,15 @@ export async function getLastImportDates(
   return Array.isArray(data) ? data : [];
 }
 
-/** Source keys for import (match backend). */
-export const IMPORT_SOURCE_KEYS = {
+/** Import sources (match backend ImportSource enum). */
+export const IMPORT_SOURCES = {
   Arvest: "Arvest",
-  ABFCUSavings: "ABFCU Savings",
-  ABFCUChecking: "ABFCU Checking",
-  DiscoverSavings: "Discover Savings",
-  DiscoverChecking: "Discover Checking",
-  DiscoverCredit: "Discover Credit",
-} as const;
+  AbfcuSavings: "AbfcuSavings",
+  AbfcuChecking: "AbfcuChecking",
+  DiscoverSavings: "DiscoverSavings",
+  DiscoverChecking: "DiscoverChecking",
+  DiscoverCredit: "DiscoverCredit",
+} as const satisfies Record<string, ImportSource>;
 
 /** Infer format from file extension. */
 export function formatFromFile(file: File): string {

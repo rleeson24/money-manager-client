@@ -10,19 +10,19 @@ import {
   getLastImportDates,
   importFromFile,
   formatFromFile,
-  IMPORT_SOURCE_KEYS,
+  IMPORT_SOURCES,
   type LastImportDatesItem,
   type ImportResult,
 } from "../services/importService";
 import "./ImportPage.css";
 
 const SECTIONS = [
-  { id: 0, card: "Arvest", label: "Arvest", sourceKey: IMPORT_SOURCE_KEYS.Arvest, useDatePaid: false },
-  { id: 1, card: "ABFCU", label: "ABFCU Savings", sourceKey: IMPORT_SOURCE_KEYS.ABFCUSavings, useDatePaid: false },
-  { id: 2, card: "ABFCU", label: "ABFCU Checking", sourceKey: IMPORT_SOURCE_KEYS.ABFCUChecking, useDatePaid: false },
-  { id: 3, card: "Discover", label: "Discover Savings", sourceKey: IMPORT_SOURCE_KEYS.DiscoverSavings, useDatePaid: false },
-  { id: 4, card: "Discover", label: "Discover Checking", sourceKey: IMPORT_SOURCE_KEYS.DiscoverChecking, useDatePaid: false },
-  { id: 5, card: "Discover", label: "Discover Credit", sourceKey: IMPORT_SOURCE_KEYS.DiscoverCredit, useDatePaid: true },
+  { id: 0, card: "Arvest", label: "Arvest", importSource: IMPORT_SOURCES.Arvest, useDatePaid: false },
+  { id: 1, card: "ABFCU", label: "ABFCU Savings", importSource: IMPORT_SOURCES.AbfcuSavings, useDatePaid: false },
+  { id: 2, card: "ABFCU", label: "ABFCU Checking", importSource: IMPORT_SOURCES.AbfcuChecking, useDatePaid: false },
+  { id: 3, card: "Discover", label: "Discover Savings", importSource: IMPORT_SOURCES.DiscoverSavings, useDatePaid: false },
+  { id: 4, card: "Discover", label: "Discover Checking", importSource: IMPORT_SOURCES.DiscoverChecking, useDatePaid: false },
+  { id: 5, card: "Discover", label: "Discover Credit", importSource: IMPORT_SOURCES.DiscoverCredit, useDatePaid: true },
 ] as const;
 
 /** Pick the payment method that best matches the section's card/label (e.g. "Discover Credit" → PM named "Discover"). */
@@ -124,7 +124,7 @@ export default function ImportPage() {
     setImportingId(sectionId);
     setResult(null);
     try {
-      const data = await importFromFile(file, format, section.sourceKey, paymentMethodId);
+      const data = await importFromFile(file, format, section.importSource, paymentMethodId);
       setResult({ sectionId, data });
       const ids = SECTIONS.map((_, i) => selectedIds[i] ?? paymentMethods[0]?.id ?? 1);
       const dates = await getLastImportDates(ids);
