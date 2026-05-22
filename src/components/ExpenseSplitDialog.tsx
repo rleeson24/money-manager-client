@@ -38,6 +38,38 @@ function toRow(s: ExpenseSplit): SplitRow {
   };
 }
 
+function sumRows(rows: SplitRow[]): number {
+  return rows.reduce((a, r) => a + (parseFloat(r.amount) || 0), 0);
+}
+
+function isRowComplete(row: SplitRow): boolean {
+  const amount = parseFloat(row.amount);
+  return row.description.trim() !== "" && Number.isFinite(amount) && amount > 0;
+}
+
+function createDraftRow(remaining: number, defaultCategoryId: number): SplitRow {
+  return {
+    description: "",
+    amount: (remaining > 0.005 ? remaining : 0.01).toFixed(2),
+    category: defaultCategoryId,
+  };
+}
+
+function appendDraftRowIfNeeded(
+  rows: SplitRow[],
+  completedIndex: number,
+  parentAmount: number,
+  defaultCategoryId: number
+): SplitRow[] {
+  if (completedIndex !== rows.length - 1) return rows;
+  if (!isRowComplete(rows[completedIndex])) return rows;
+
+  const remaining = parentAmount - sumRows(rows);
+  if (remaining < 0.005) return rows;
+
+  return [...rows, createDraftRow(remaining, defaultCategoryId)];
+}
+
 export function ExpenseSplitDialog({
   open,
   onOpenChange,
@@ -72,6 +104,7 @@ export function ExpenseSplitDialog({
         })),
     [categories]
   );
+  const defaultCategoryId = categories.find((c) => c.name !== "Split")?.category_I ?? categories[0]?.category_I ?? 1;
 
   useEffect(() => {
     if (open) {
@@ -90,7 +123,7 @@ export function ExpenseSplitDialog({
     }
   }, [open, expenseId, parentAmount, initialSplits, categories]);
 
-  const sum = rows.reduce((a, r) => a + (parseFloat(r.amount) || 0), 0);
+  const sum = sumRows(rows);
   const remaining = parentAmount - sum;
   const isValid = Math.abs(remaining) < 0.005;
 
@@ -100,14 +133,21 @@ export function ExpenseSplitDialog({
     );
   }
 
+  function updateRowAndMaybeAppendDraft(index: number, field: keyof SplitRow, value: string | number) {
+    setRows((prev) => {
+      const updated = prev.map((r, i) => (i === index ? { ...r, [field]: value } : r));
+      return appendDraftRowIfNeeded(updated, index, parentAmount, defaultCategoryId);
+    });
+  }
+
+  function checkRowCompletion(index: number) {
+    setRows((prev) => appendDraftRowIfNeeded(prev, index, parentAmount, defaultCategoryId));
+  }
+
   function addRow() {
     setRows((prev) => [
       ...prev,
-      {
-        description: "",
-        amount: (remaining > 0 ? remaining : 0.01).toFixed(2),
-        category: categories[0]?.category_I ?? 1,
-      },
+      createDraftRow(remaining, defaultCategoryId),
     ]);
   }
 
@@ -174,6 +214,7 @@ export function ExpenseSplitDialog({
                       <Input
                         value={row.description}
                         onChange={(e) => updateRow(idx, "description", e.target.value)}
+                        onBlur={() => checkRowCompletion(idx)}
                         placeholder="Description"
                         className="border-gray-200"
                       />
@@ -186,7 +227,12 @@ export function ExpenseSplitDialog({
                           updateRow(idx, "amount", sanitizeAmountInput(e.target.value))
                         }
                         onBlur={() => {
-                          updateRow(idx, "amount", formatAmountForBlur(row.amount));
+                          setRows((prev) => {
+                            const updated = prev.map((r, i) =>
+                              i === idx ? { ...r, amount: formatAmountForBlur(r.amount) } : r
+                            );
+                            return appendDraftRowIfNeeded(updated, idx, parentAmount, defaultCategoryId);
+                          });
                         }}
                         className="w-24 text-right border-gray-200"
                       />
@@ -204,7 +250,7 @@ export function ExpenseSplitDialog({
                         onChange={(
                           opt: SingleValue<{ value: string; label: string }>
                         ) =>
-                          updateRow(
+                          updateRowAndMaybeAppendDraft(
                             idx,
                             "category",
                             Number(opt?.value ?? row.category)

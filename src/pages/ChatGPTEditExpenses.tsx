@@ -160,6 +160,11 @@ export default function ExpensesEditor() {
       }
     >
   >({});
+  const expensesRef = useRef<Expense[]>([]);
+
+  useEffect(() => {
+    expensesRef.current = expenses;
+  }, [expenses]);
 
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -287,6 +292,83 @@ export default function ExpensesEditor() {
     setFocusedAmountId((prev) => (prev === id ? null : prev));
   }
 
+  function cancelPendingPatchesForExpense(id: number) {
+    Object.entries(patchDebounceRef.current).forEach(([key, debouncedFn]) => {
+      if (key.startsWith(`${id}-`)) debouncedFn.cancel();
+    });
+  }
+
+  function markPatchFields(id: number, fields: string[], dirty: boolean, errored = false) {
+    setDirtyCells((d) => {
+      const next = { ...d };
+      fields.forEach((field) => {
+        next[`${id}-${field}`] = dirty;
+      });
+      return next;
+    });
+    setErrorCells((e) => {
+      const next = { ...e };
+      fields.forEach((field) => {
+        next[`${id}-${field}`] = errored;
+      });
+      return next;
+    });
+  }
+
+  function saveExpensePatch(
+    expense: Expense,
+    fields: Partial<Expense>,
+    expectedModifiedDateTime?: string
+  ): Promise<Expense> {
+    const id = expIdNum(expense);
+    const fieldNames = Object.keys(fields);
+    const payload: Partial<Expense> = {
+      ...fields,
+      modifiedDateTime: expectedModifiedDateTime ?? expense.modifiedDateTime,
+    };
+
+    return updateExpense(id, payload)
+      .then((updated) => {
+        setExpenses((prev) => prev.map((x) => (expIdNum(x) !== id ? x : updated)));
+        markPatchFields(id, fieldNames, false);
+        return updated;
+      })
+      .catch((err) => {
+        if (err instanceof UpdateConflictError) {
+          return Swal.fire({
+            title: "Conflict",
+            text: "This expense has been updated already. Do you want to overwrite?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes",
+            cancelButtonText: "No",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              return saveExpensePatch(expense, fields, err.currentExpense.modifiedDateTime);
+            }
+            setExpenses((prev) => prev.map((x) => (expIdNum(x) !== id ? x : err.currentExpense)));
+            markPatchFields(id, fieldNames, false);
+            throw err;
+          });
+        }
+        markPatchFields(id, fieldNames, true, true);
+        throw err;
+      });
+  }
+
+  /** Immediate multi-field save (e.g. split checkbox sets isSplit + category together). */
+  function applyExpensePatch(expense: Expense, fields: Partial<Expense>) {
+    const id = expIdNum(expense);
+    const fieldNames = Object.keys(fields);
+    cancelPendingPatchesForExpense(id);
+    undoStack.current.push([...expensesRef.current]);
+    markPatchFields(id, fieldNames, true);
+    setExpenses((prev) =>
+      prev.map((x) => (expIdNum(x) === id ? { ...x, ...fields } : x))
+    );
+    return saveExpensePatch(expense, fields);
+  }
+
   function optimisticUpdate(expense: Expense, field: string, value: string | number | boolean | null | undefined) {
     const id = expIdNum(expense);
     undoStack.current.push([...expenses]);
@@ -308,9 +390,10 @@ export default function ExpensesEditor() {
     if (!patchDebounceRef.current[key]) {
       patchDebounceRef.current[key] = debounce(
         (patchId: number, patchField: string, patchValue: string | number | boolean | null | undefined, exp: Expense) => {
+          const current = expensesRef.current.find((x) => expIdNum(x) === patchId);
           const payload: Partial<Expense> = {
             [patchField]: patchValue === undefined || patchValue === null ? undefined : patchValue,
-            modifiedDateTime: exp.modifiedDateTime,
+            modifiedDateTime: current?.modifiedDateTime ?? exp.modifiedDateTime,
           };
           updateExpense(patchId, payload)
             .then((updated) => {
@@ -953,18 +1036,23 @@ export default function ExpensesEditor() {
                   <input
                     type="checkbox"
                     checked={exp.isSplit ?? false}
-                    onChange={(e) =>
-                      {
-                        optimisticUpdate(exp, "isSplit", e.target.checked)
-                        if (e.target.checked) {
-                          const splitCategoryId = categories.find((c) => c.name === "Split")?.category_I
-                          if (splitCategoryId != null) optimisticUpdate(exp, "category", splitCategoryId)
-                          setSplitDialogExpense(exp);
-                          setSplitDialogInitialSplits([]);
-                          setSplitDialogOpen(true);
-                        }
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      if (checked) {
+                        const splitCategoryId = categories.find((c) => c.name === "Split")?.category_I;
+                        const updates: Partial<Expense> = { isSplit: true };
+                        if (splitCategoryId != null) updates.category = splitCategoryId;
+                        applyExpensePatch(exp, updates)
+                          .then((updated) => {
+                            setSplitDialogExpense(updated);
+                            setSplitDialogInitialSplits([]);
+                            setSplitDialogOpen(true);
+                          })
+                          .catch(() => {});
+                      } else {
+                        applyExpensePatch(exp, { isSplit: false }).catch(() => {});
                       }
-                    }
+                    }}
                     className="cursor-pointer"
                     aria-label="Split"
                   />
