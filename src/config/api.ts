@@ -2,7 +2,7 @@
  * Single flag to switch between client-side mock data and calling the real API.
  * Set VITE_USE_API=true in .env to use the API; otherwise the client uses in-memory mocks.
  */
-import { getAccessToken } from "../auth/getAccessToken";
+import { getAuthHeaders } from "../auth/authHeaders";
 import { isAuthEnabled } from "../auth/msalConfig";
 
 export const USE_API = import.meta.env.VITE_USE_API === "true";
@@ -55,10 +55,7 @@ export async function apiJson<T>(
   }
 
   if (USE_API && isAuthEnabled) {
-    const token = await getAccessToken();
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    Object.assign(headers, await getAuthHeaders());
   }
 
   const res = await fetch(`${API_BASE}${path}`, {

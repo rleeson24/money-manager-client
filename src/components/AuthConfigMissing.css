@@ -1,0 +1,36 @@
+.auth-config-missing {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.auth-config-missing__card {
+  width: 100%;
+  max-width: 520px;
+  padding: 2rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.auth-config-missing__title {
+  margin: 0 0 1rem;
+}
+
+.auth-config-missing__card code {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.auth-config-missing__card ul {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}

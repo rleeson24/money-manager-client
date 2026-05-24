@@ -1,5 +1,5 @@
 import { API_BASE, apiJson, USE_API } from "../config/api";
-import { getAccessToken } from "../auth/getAccessToken";
+import { getAuthHeaders } from "../auth/authHeaders";
 import { isAuthEnabled } from "../auth/msalConfig";
 
 export interface ImportResult {
@@ -39,10 +39,7 @@ export async function importFromFile(
 
   const headers: Record<string, string> = {};
   if (USE_API && isAuthEnabled) {
-    const token = await getAccessToken();
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    Object.assign(headers, await getAuthHeaders());
   }
 
   const res = await fetch(`${API_BASE}/api/import/file`, {
