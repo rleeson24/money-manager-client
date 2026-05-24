@@ -2,6 +2,9 @@
  * Single flag to switch between client-side mock data and calling the real API.
  * Set VITE_USE_API=true in .env to use the API; otherwise the client uses in-memory mocks.
  */
+import { getAccessToken } from "../auth/getAccessToken";
+import { isAuthEnabled } from "../auth/msalConfig";
+
 export const USE_API = import.meta.env.VITE_USE_API === "true";
 
 /** Base URL for API requests (e.g. empty for same-origin, or https://localhost:7xxx when using Aspire). */
@@ -40,15 +43,33 @@ export async function apiJson<T>(
   options: RequestInit = {},
   errorMessage?: string
 ): Promise<T | undefined> {
-  // Always send JSON headers unless explicitly overridden
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
+  const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   };
+
+  const hasBody = options.body !== undefined && options.body !== null;
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (hasBody && !isFormData && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (USE_API && isAuthEnabled) {
+    const token = await getAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
   });
+
+  if (res.status === 401 && USE_API && isAuthEnabled) {
+    window.location.assign("/login");
+    throw new ApiError(401, "Unauthorized");
+  }
 
   // Handle non-2xx responses first
   if (!res.ok) {

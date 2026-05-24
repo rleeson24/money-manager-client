@@ -5,6 +5,9 @@
  */
 
 import { NavLink } from "react-router-dom";
+import { USE_API } from "../config/api";
+import { isAuthEnabled } from "../auth/msalConfig";
+import AuthUserMenu from "./AuthUserMenu";
 import "./SiteHeader.css";
 
 const iconEdit = (
@@ -74,6 +77,7 @@ function SiteHeader() {
             ))}
           </ul>
         </nav>
+        {USE_API && isAuthEnabled ? <AuthUserMenu /> : null}
       </div>
     </header>
   );

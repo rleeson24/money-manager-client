@@ -1,4 +1,6 @@
-import { API_BASE, apiJson } from "../config/api";
+import { API_BASE, apiJson, USE_API } from "../config/api";
+import { getAccessToken } from "../auth/getAccessToken";
+import { isAuthEnabled } from "../auth/msalConfig";
 
 export interface ImportResult {
   created: number;
@@ -35,10 +37,24 @@ export async function importFromFile(
   form.append("importSource", importSource);
   form.append("paymentMethodId", String(paymentMethodId));
 
+  const headers: Record<string, string> = {};
+  if (USE_API && isAuthEnabled) {
+    const token = await getAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
   const res = await fetch(`${API_BASE}/api/import/file`, {
     method: "POST",
+    headers,
     body: form,
   });
+
+  if (res.status === 401 && USE_API && isAuthEnabled) {
+    window.location.assign("/login");
+    throw new Error("Unauthorized");
+  }
 
   if (!res.ok) {
     let body: unknown;
