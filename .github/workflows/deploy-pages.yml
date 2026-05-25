@@ -1,0 +1,58 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      KEY_VAULT_NAME: kv-moneymanager-prod
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Load secrets from Key Vault
+        shell: bash
+        run: |
+          kv() { az keyvault secret show --vault-name "$KEY_VAULT_NAME" -n "$1" --query value -o tsv; }
+          echo "VITE_AZURE_CLIENT_ID=$(kv AzureAd--ClientId)" >> "$GITHUB_ENV"
+          echo "VITE_AZURE_TENANT_ID=$(kv AzureAd--TenantId)" >> "$GITHUB_ENV"
+          echo "VITE_AZURE_API_SCOPE=$(kv AzureAd--Audience)/access_as_user" >> "$GITHUB_ENV"
+          echo "VITE_USE_API=$(kv ViteUseApi)" >> "$GITHUB_ENV"
+          echo "VITE_API_URL=$(kv ViteApiUrl)" >> "$GITHUB_ENV"
+          echo "CF_API_TOKEN=$(kv CloudflareApiToken)" >> "$GITHUB_ENV"
+          echo "CF_ACCOUNT_ID=$(kv CloudflareAccountId)" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_AZURE_CLIENT_ID: ${{ env.VITE_AZURE_CLIENT_ID }}
+          VITE_AZURE_TENANT_ID: ${{ env.VITE_AZURE_TENANT_ID }}
+          VITE_AZURE_API_SCOPE: ${{ env.VITE_AZURE_API_SCOPE }}
+          VITE_USE_API: ${{ env.VITE_USE_API }}
+          VITE_API_URL: ${{ env.VITE_API_URL }}
+
+      - uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ env.CF_API_TOKEN }}
+          accountId: ${{ env.CF_ACCOUNT_ID }}
+          projectName: money-manager-client
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
