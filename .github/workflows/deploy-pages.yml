@@ -8,6 +8,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  deployments: write
 
 jobs:
   deploy:
@@ -48,6 +49,22 @@ jobs:
           VITE_AZURE_API_SCOPE: ${{ env.VITE_AZURE_API_SCOPE }}
           VITE_USE_API: ${{ env.VITE_USE_API }}
           VITE_API_URL: ${{ env.VITE_API_URL }}
+
+      - name: Ensure Cloudflare Pages project exists
+        shell: bash
+        env:
+          CF_API_TOKEN: ${{ env.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ env.CF_ACCOUNT_ID }}
+        run: |
+          project_url="https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/money-manager-client"
+          status=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${CF_API_TOKEN}" "${project_url}")
+          if [ "${status}" = "404" ]; then
+            curl -sS -X POST \
+              -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data '{"name":"money-manager-client","production_branch":"main"}' \
+              "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects"
+          fi
 
       - uses: cloudflare/pages-action@v1
         with:
