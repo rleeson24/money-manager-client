@@ -18,9 +18,13 @@ import { getCategories, type Category } from "../services/categoryService";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import {
   createExpense,
-  getExpense,
+  deleteExpense,
   updateExpense,
 } from "../services/expenseService";
+import {
+  getSessionExpenses,
+  setSessionExpenses,
+} from "../utils/sessionExpenses";
 import {
   buildGroupedCategoryOptions,
   getCategoryLabel,
@@ -42,9 +46,8 @@ function AddExpense() {
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
   const isEditMode = editingExpenseId != null;
 
-  // State for managing expenses list
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(false);
+  // Expenses added this browser session via this page
+  const [expenses, setExpenses] = useState<Expense[]>(() => getSessionExpenses());
   const [error, setError] = useState<string | null>(null);
 
   // State for form
@@ -70,85 +73,25 @@ function AddExpense() {
       })
       .catch(console.error);
   }, []);
-  // Load expenses on component mount
   useEffect(() => {
-    loadExpenses();
-  }, []);
+    setSessionExpenses(expenses);
+  }, [expenses]);
 
-  /**
-   * Load all expenses
-   * TODO: Replace with actual API call
-   */
-  const loadExpenses = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // TODO: Replace with actual API endpoint
-      // const response = await fetch('/api/expenses')
-      // const data = await response.json()
-      // setExpenses(data)
-
-      // Mock data for now
-      const mockExpenses: Expense[] = [
-        {
-          id: "1",
-          description: "Groceries",
-          amount: 125.5,
-          category: 1,
-          date: "2024-01-15",
-          notes: "Weekly grocery shopping",
-        },
-        {
-          id: "2",
-          description: "Gas",
-          amount: 45.0,
-          category: 2,
-          date: "2024-01-16",
-        },
-      ];
-      setExpenses(mockExpenses);
-    } catch (err) {
-      setError("Failed to load expenses. Please try again.");
-      console.error("Error loading expenses:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Load a specific expense for editing
-   */
-  const loadExpense = async (expenseId: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const expense = await getExpense(Number(expenseId));
-      if (expense) {
-        setEditingExpenseId(expIdNum(expense));
-        setFormData({
-          description: expense.description,
-          amount: expense.amount,
-          category: expense.category,
-          date: expense.date,
-          notes: expense.notes || "",
-          paymentMethod: expense.paymentMethod ?? null,
-          datePaid: expense.datePaid || null,
-          id: expense.id,
-          modifiedDateTime: expense.modifiedDateTime,
-        });
-        setAmountStr(expense.amount != null ? expense.amount.toFixed(2) : "");
-      } else {
-        setError("Expense not found");
-      }
-    } catch (err) {
-      setError("Failed to load expense. Please try again.");
-      console.error("Error loading expense:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  function populateFormFromExpense(expense: Expense) {
+    setEditingExpenseId(expIdNum(expense));
+    setFormData({
+      description: expense.description,
+      amount: expense.amount,
+      category: expense.category,
+      date: expense.date,
+      notes: expense.notes || "",
+      paymentMethod: expense.paymentMethod ?? null,
+      datePaid: expense.datePaid || null,
+      id: expense.id,
+      modifiedDateTime: expense.modifiedDateTime,
+    });
+    setAmountStr(expense.amount != null ? expense.amount.toFixed(2) : "");
+  }
 
   function getValidatedAmount(): number | null {
     const amountNum = parseFloat(formatAmountForBlur(amountStr)) || 0;
@@ -292,10 +235,7 @@ function AddExpense() {
     }
 
     try {
-      // TODO: Replace with actual API call
-      // await fetch(`/api/expenses/${expenseId}`, { method: 'DELETE' })
-
-      // Mock delete
+      await deleteExpense(expIdNum({ id: expenseId }));
       setExpenses((prev) => prev.filter((exp) => exp.id !== expenseId));
     } catch (err) {
       setError("Failed to delete expense. Please try again.");
@@ -306,9 +246,14 @@ function AddExpense() {
   /**
    * Start editing an expense
    */
-  const handleEdit = async (expenseId: string | number) => {
-    setEditingExpenseId(expIdNum({ id: expenseId }));
-    await loadExpense(String(expenseId));
+  const handleEdit = (expenseId: string | number) => {
+    const expense = expenses.find((exp) => exp.id === expenseId);
+    if (!expense) {
+      setError("Expense not found");
+      return;
+    }
+    setError(null);
+    populateFormFromExpense(expense);
   };
 
   function resetForm() {
@@ -484,13 +429,8 @@ function AddExpense() {
               <button
                 type="submit"
                 className="submit-button"
-                disabled={loading}
               >
-                {loading
-                  ? "Saving..."
-                  : isEditMode
-                  ? "Update Expense"
-                  : "Add Expense"}
+                {isEditMode ? "Update Expense" : "Add Expense"}
               </button>
               {isEditMode && (
                 <button
@@ -514,9 +454,7 @@ function AddExpense() {
             </button>
           </div>
 
-          {loading && expenses.length === 0 ? (
-            <div className="loading">Loading expenses...</div>
-          ) : expenses.length === 0 ? (
+          {expenses.length === 0 ? (
             <div className="empty-state">
               <p>No expenses found. Add your first expense above!</p>
             </div>
