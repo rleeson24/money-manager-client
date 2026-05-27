@@ -1,20 +1,10 @@
 import { USE_API, apiJson } from "../config/api";
+import { mockPaymentMethodsData } from "../data/mockPaymentMethodsData";
 
 export interface PaymentMethod {
   id: number;
   PaymentMethod: string;
 }
-
-const mockPaymentMethods: PaymentMethod[] = [
-  { id: 1, PaymentMethod: "Discover" },
-  { id: 2, PaymentMethod: "Visa" },
-  { id: 3, PaymentMethod: "Mastercard" },
-  { id: 4, PaymentMethod: "American Express" },
-  { id: 5, PaymentMethod: "Debit Card" },
-  { id: 6, PaymentMethod: "Cash" },
-  { id: 7, PaymentMethod: "Bank Transfer" },
-  { id: 8, PaymentMethod: "PayPal" },
-];
 
 /**
  * Get all payment methods.
@@ -25,7 +15,7 @@ export async function getPaymentMethods(signal?: AbortSignal): Promise<PaymentMe
     const data = await apiJson<PaymentMethod[]>("/api/payment-methods", { signal }, "Failed to fetch payment methods");
     return Array.isArray(data) ? data : [];
   }
-  return [...mockPaymentMethods];
+  return [...mockPaymentMethodsData];
 }
 
 /**
@@ -37,5 +27,5 @@ export async function getPaymentMethod(id: number): Promise<PaymentMethod | null
     const all = await getPaymentMethods();
     return all.find((pm) => pm.id === id) ?? null;
   }
-  return mockPaymentMethods.find((pm) => pm.id === id) ?? null;
+  return mockPaymentMethodsData.find((pm) => pm.id === id) ?? null;
 }

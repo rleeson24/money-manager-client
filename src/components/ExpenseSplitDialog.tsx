@@ -9,6 +9,10 @@ import {
 } from "./chatGPTUIComponents";
 import ReactSelect, { SingleValue } from "react-select";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
+import {
+  buildGroupedCategoryOptions,
+  findCategoryOption,
+} from "../utils/categoryOptions";
 import { replaceExpenseSplits } from "../services/expenseSplitService";
 import type { ExpenseSplit } from "../types/expenseSplit";
 import type { Category } from "../services/categoryService";
@@ -87,7 +91,7 @@ export function ExpenseSplitDialog({
           {
             description: "",
             amount: parentAmount.toFixed(2),
-            category: categories[0]?.category_I ?? 1,
+            category: defaultCategoryId,
           },
         ]
   );
@@ -96,15 +100,14 @@ export function ExpenseSplitDialog({
 
   const categoryOptions = useMemo(
     () =>
-      categories
-        .filter((c) => c.name !== "Split")
-        .map((c) => ({
-          value: String(c.category_I),
-          label: c.name,
-        })),
+      buildGroupedCategoryOptions(categories, {
+        excludeNames: ["Split"],
+        activeOnly: true,
+      }),
     [categories]
   );
-  const defaultCategoryId = categories.find((c) => c.name !== "Split")?.category_I ?? categories[0]?.category_I ?? 1;
+  const defaultCategoryId =
+    categories.find((c) => c.name !== "Split" && !c.archived)?.category_I ?? 6;
 
   useEffect(() => {
     if (open) {
@@ -115,7 +118,7 @@ export function ExpenseSplitDialog({
               {
                 description: "",
                 amount: parentAmount.toFixed(2),
-                category: categories[0]?.category_I ?? 1,
+                category: defaultCategoryId,
               },
             ]
       );
@@ -242,11 +245,7 @@ export function ExpenseSplitDialog({
                         classNamePrefix="cat-select"
                         isSearchable
                         options={categoryOptions}
-                        value={
-                          categoryOptions.find(
-                            (o) => o.value === String(row.category)
-                          ) ?? null
-                        }
+                        value={findCategoryOption(categoryOptions, row.category)}
                         onChange={(
                           opt: SingleValue<{ value: string; label: string }>
                         ) =>

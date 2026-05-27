@@ -14,6 +14,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { Expense } from "../types/expense";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 import ReactSelect, { SingleValue } from "react-select";
+import { getCategories, type Category } from "../services/categoryService";
+import {
+  buildGroupedCategoryOptions,
+  getCategoryLabel,
+  resolveCategorySelectValue,
+} from "../utils/categoryOptions";
 import "./EditExpenses.css";
 
 function EditExpenses() {
@@ -37,7 +43,11 @@ function EditExpenses() {
     id: 0,
   });
   const [amountStr, setAmountStr] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
 
+  useEffect(() => {
+    getCategories().then(setCategories).catch(console.error);
+  }, []);
   // Load expenses on component mount
   useEffect(() => {
     loadExpenses();
@@ -291,27 +301,13 @@ function EditExpenses() {
     navigate("/expenses/edit/new");
   };
 
-  // Common expense categories (id matches API Categories table)
-  const categories = [
-    { id: 1, name: "Food" },
-    { id: 2, name: "Transportation" },
-    { id: 3, name: "Housing" },
-    { id: 4, name: "Utilities" },
-    { id: 5, name: "Entertainment" },
-    { id: 6, name: "Healthcare" },
-    { id: 7, name: "Shopping" },
-    { id: 8, name: "Education" },
-    { id: 9, name: "Other" },
-    { id: 10, name: "Split" },
-  ];
-
   const categoryOptions = useMemo(
     () =>
-      categories.map((c) => ({
-        value: String(c.id),
-        label: c.name,
-      })),
-    []
+      buildGroupedCategoryOptions(categories, {
+        excludeNames: ["Split"],
+        activeOnly: true,
+      }),
+    [categories]
   );
 
   return (
@@ -377,13 +373,7 @@ function EditExpenses() {
                 classNamePrefix="cat-select"
                 isSearchable
                 options={categoryOptions}
-                value={
-                  formData.category != null
-                    ? categoryOptions.find(
-                        (o) => o.value === String(formData.category)
-                      ) ?? null
-                    : null
-                }
+                value={resolveCategorySelectValue(categoryOptions, formData.category)}
                 onChange={(opt: SingleValue<{ value: string; label: string }>) =>
                   setFormData((prev) => ({
                     ...prev,
@@ -471,7 +461,7 @@ function EditExpenses() {
                         ${expense.amount.toFixed(2)}
                       </span>
                       <span className="expense-category">
-                        {categories.find((c) => c.id === expense.category)?.name ?? expense.category}
+                        {getCategoryLabel(expense.category, categories)}
                       </span>
                       <span className="expense-date">
                         {new Date(expense.date).toLocaleDateString()}

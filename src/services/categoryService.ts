@@ -1,51 +1,183 @@
 import { USE_API, apiJson } from "../config/api";
+import { mockCategories } from "../data/mockCategoriesData";
 
 export interface Category {
   category_I: number;
   name: string;
+  parentCategory_I?: number | null;
+  required: boolean;
+  archived: boolean;
+  hasChildren?: boolean;
 }
 
-const mockCategories: Category[] = [
-  { category_I: 1, name: "Other Expenses (Pare)" },
-  { category_I: 2, name: "Dining/Eating Out" },
-  { category_I: 3, name: "Special Occasions (P)" },
-  { category_I: 4, name: "Gas - Auto" },
-  { category_I: 5, name: "Health" },
-  { category_I: 6, name: "Groceries (Parent)" },
-  { category_I: 7, name: "Outdoors (Parent)" },
-  { category_I: 8, name: "Gifts (Parent)" },
-  { category_I: 9, name: "Transportation" },
-  { category_I: 10, name: "Entertainment" },
-  { category_I: 11, name: "Utilities" },
-  { category_I: 12, name: "Healthcare" },
-  { category_I: 13, name: "Shopping" },
-  { category_I: 14, name: "Health & Fitness" },
-  { category_I: 15, name: "Housing" },
-  { category_I: 16, name: "Education" },
-  { category_I: 17, name: "Food" },
-  { category_I: 18, name: "Split" },
-];
+export interface CreateCategoryInput {
+  name: string;
+  parentCategory_I?: number | null;
+  required?: boolean;
+}
+
+export interface UpdateCategoryInput {
+  name?: string;
+  parentCategory_I?: number | null;
+  required?: boolean;
+  archived?: boolean;
+  clearParent?: boolean;
+}
+
+function withHasChildren(categories: Category[]): Category[] {
+  const parentIds = new Set(
+    categories
+      .filter((c) => c.parentCategory_I != null)
+      .map((c) => c.parentCategory_I!)
+  );
+  return categories.map((c) => ({
+    ...c,
+    hasChildren: parentIds.has(c.category_I),
+  }));
+}
+
+let mockStore: Category[] = withHasChildren(mockCategories.map((c) => ({ ...c })));
+let nextMockCategoryId = Math.max(...mockCategories.map((c) => c.category_I), 0) + 1;
+
+function normalizeCategory(raw: Category): Category {
+  return {
+    category_I: raw.category_I,
+    name: raw.name,
+    parentCategory_I: raw.parentCategory_I ?? null,
+    required: raw.required ?? false,
+    archived: raw.archived ?? false,
+    hasChildren: raw.hasChildren,
+  };
+}
 
 /**
  * Get all categories.
  * When USE_API: GET /api/categories
  */
-export async function getCategories(signal?: AbortSignal): Promise<Category[]> {
+export async function getCategories(
+  signal?: AbortSignal,
+  activeOnly = false
+): Promise<Category[]> {
   if (USE_API) {
-    const data = await apiJson<Category[]>("/api/categories", { signal }, "Failed to fetch categories");
-    return Array.isArray(data) ? data : [];
+    const qs = activeOnly ? "?activeOnly=true" : "";
+    const data = await apiJson<Category[]>(
+      `/api/categories${qs}`,
+      { signal },
+      "Failed to fetch categories"
+    );
+    return withHasChildren(Array.isArray(data) ? data.map(normalizeCategory) : []);
   }
-  return [...mockCategories];
+  return [...mockStore];
 }
 
-/**
- * Get a category by ID.
- * When USE_API: fetches all and finds by id (API has no single-get). Otherwise uses mock.
- */
 export async function getCategory(id: number): Promise<Category | null> {
   if (USE_API) {
-    const all = await getCategories();
-    return all.find((c) => c.category_I === id) ?? null;
+    const data = await apiJson<Category>(
+      `/api/categories/${id}`,
+      {},
+      "Failed to fetch category"
+    );
+    return data ? normalizeCategory(data) : null;
   }
-  return mockCategories.find((c) => c.category_I === id) ?? null;
+  return mockStore.find((c) => c.category_I === id) ?? null;
+}
+
+function validateMockCreate(input: CreateCategoryInput): string | null {
+  if (!input.name.trim()) return "Name is required.";
+  if (input.parentCategory_I != null) {
+    const parent = mockStore.find((c) => c.category_I === input.parentCategory_I);
+    if (!parent) return "Parent category not found.";
+    if (parent.parentCategory_I != null) return "Parent must be a top-level category.";
+    if (parent.archived) return "Cannot assign to an archived parent.";
+  }
+  return null;
+}
+
+function validateMockDelete(id: number): string | null {
+  if (id === 19) return "The Split category cannot be deleted.";
+  if (mockStore.some((c) => c.parentCategory_I === id))
+    return "Cannot delete a category that has children.";
+  return null;
+}
+
+export async function createCategory(input: CreateCategoryInput): Promise<Category> {
+  if (USE_API) {
+    const data = await apiJson<Category>(
+      "/api/categories",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          name: input.name,
+          parentCategory_I: input.parentCategory_I ?? null,
+          required: input.required ?? false,
+        }),
+      },
+      "Failed to create category"
+    );
+    if (!data) throw new Error("Failed to create category");
+    return normalizeCategory(data);
+  }
+  const err = validateMockCreate(input);
+  if (err) throw new Error(err);
+  const cat: Category = {
+    category_I: nextMockCategoryId++,
+    name: input.name.trim(),
+    parentCategory_I: input.parentCategory_I ?? null,
+    required: input.required ?? false,
+    archived: false,
+  };
+  mockStore = withHasChildren([...mockStore, cat]);
+  return cat;
+}
+
+export async function updateCategory(
+  id: number,
+  input: UpdateCategoryInput
+): Promise<Category> {
+  if (USE_API) {
+    const data = await apiJson<Category>(
+      `/api/categories/${id}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(input),
+      },
+      "Failed to update category"
+    );
+    if (!data) throw new Error("Failed to update category");
+    return normalizeCategory(data);
+  }
+  const idx = mockStore.findIndex((c) => c.category_I === id);
+  if (idx < 0) throw new Error("Category not found");
+  const current = mockStore[idx];
+  if (input.archived === true && id === 19) throw new Error("The Split category cannot be archived.");
+  if (input.parentCategory_I != null && current.hasChildren)
+    throw new Error("Cannot assign a parent to a category that has children.");
+  const updated: Category = {
+    ...current,
+    name: input.name?.trim() ?? current.name,
+    parentCategory_I:
+      input.clearParent === true
+        ? null
+        : input.parentCategory_I !== undefined
+          ? input.parentCategory_I
+          : current.parentCategory_I,
+    required: input.required ?? current.required,
+    archived: input.archived ?? current.archived,
+  };
+  mockStore = withHasChildren(mockStore.map((c, i) => (i === idx ? updated : c)));
+  return mockStore.find((c) => c.category_I === id)!;
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  if (USE_API) {
+    await apiJson<void>(
+      `/api/categories/${id}`,
+      { method: "DELETE" },
+      "Failed to delete category"
+    );
+    return;
+  }
+  const err = validateMockDelete(id);
+  if (err) throw new Error(err);
+  mockStore = withHasChildren(mockStore.filter((c) => c.category_I !== id));
 }

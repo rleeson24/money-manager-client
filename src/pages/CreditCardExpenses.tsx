@@ -10,6 +10,11 @@ import {
 import { getExpenses, updateExpense, type Expense } from "../services/expenseService";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
+import {
+  buildGroupedCategoryOptions,
+  getCategoryLabel,
+  resolveCategorySelectValue,
+} from "../utils/categoryOptions";
 import { isAbortError } from "../config/api";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 
@@ -56,11 +61,7 @@ export default function CreditCardExpenses() {
   );
 
   const categoryOptions = useMemo(
-    () =>
-      categories.map((c) => ({
-        value: String(c.category_I),
-        label: c.name,
-      })),
+    () => buildGroupedCategoryOptions(categories, { activeOnly: true }),
     [categories]
   );
 
@@ -230,8 +231,8 @@ export default function CreditCardExpenses() {
       }
 
       if (sortColumn === "category") {
-        const aName = (a.category != null ? categories.find((c) => c.category_I === a.category)?.name : null) ?? "";
-        const bName = (b.category != null ? categories.find((c) => c.category_I === b.category)?.name : null) ?? "";
+        const aName = getCategoryLabel(a.category, categories);
+        const bName = getCategoryLabel(b.category, categories);
         const aStr = aName.toLowerCase();
         const bStr = bName.toLowerCase();
         if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
@@ -512,13 +513,7 @@ export default function CreditCardExpenses() {
                           isSearchable
                           isClearable
                           options={categoryOptions}
-                          value={
-                            exp.category != null
-                              ? categoryOptions.find(
-                                  (o) => o.value === String(exp.category)
-                                ) ?? null
-                              : null
-                          }
+                          value={resolveCategorySelectValue(categoryOptions, exp.category)}
                           onChange={(
                             opt: SingleValue<{ value: string; label: string }>
                           ) =>

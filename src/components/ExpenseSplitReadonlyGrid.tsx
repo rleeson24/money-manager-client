@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { getExpenseSplits } from "../services/expenseSplitService";
 import type { ExpenseSplit } from "../types/expenseSplit";
 import type { Category } from "../services/categoryService";
+import { getCategoryLabel } from "../utils/categoryOptions";
 
 interface ExpenseSplitReadonlyGridProps {
   expenseId: number;
@@ -99,7 +100,7 @@ export function ExpenseSplitReadonlyGrid({
                   <td className="p-2">{sp.description || "—"}</td>
                   <td className="p-2 text-right">${Number(sp.amount).toFixed(2)}</td>
                   <td className="p-2">
-                    {categories.find((c) => c.category_I === sp.category)?.name ?? sp.category}
+                    {getCategoryLabel(sp.category, categories)}
                   </td>
                 </tr>
               ))

@@ -46,11 +46,18 @@ const iconBanking = (
   </svg>
 );
 
+const iconCategories = (
+  <svg className="site-header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M4 6h16M4 12h10M4 18h16" />
+  </svg>
+);
+
 const navItems = [
   { to: "/expenses/edit", label: "Edit Expenses", icon: iconEdit },
   { to: "/expenses/chatgptedit", label: "ChatGPT Edit Expenses", icon: iconChatGPT },
   { to: "/expenses/creditcard", label: "Credit Card Expenses", icon: iconCreditCard },
   { to: "/import", label: "Banking Import", icon: iconBanking },
+  { to: "/categories", label: "Categories", icon: iconCategories },
 ] as const;
 
 function SiteHeader() {

@@ -25,6 +25,12 @@ import Swal from "sweetalert2";
 import type { Expense } from "../types/expense";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
+import {
+  buildGroupedCategoryOptions,
+  flattenCategoryOptionLabels,
+  getCategoryLabel,
+  resolveCategorySelectValue,
+} from "../utils/categoryOptions";
 import { isAbortError } from "../config/api";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 import "./ChatGPTEditExpenses.css";
@@ -182,14 +188,7 @@ export default function ExpensesEditor() {
   );
 
   const categoryOptions = useMemo(
-    () =>
-      [
-        { value: "", label: "— None —" },
-        ...categories.map((c) => ({
-          value: String(c.category_I),
-          label: c.name,
-        })),
-      ],
+    () => buildGroupedCategoryOptions(categories, { includeNone: true, activeOnly: true }),
     [categories]
   );
 
@@ -200,8 +199,9 @@ export default function ExpensesEditor() {
     return Math.min(360, 40 + maxLen * 10);
   }, [paymentMethodOptions]);
   const categorySelectWidth = useMemo(() => {
-    if (categoryOptions.length === 0) return 100;
-    const maxLen = Math.max(...categoryOptions.map((o) => o.label.length));
+    const labels = flattenCategoryOptionLabels(categoryOptions);
+    if (labels.length === 0) return 100;
+    const maxLen = Math.max(...labels.map((l) => l.length));
     return Math.min(320, 24 + maxLen * 8);
   }, [categoryOptions]);
 
@@ -518,8 +518,8 @@ export default function ExpensesEditor() {
       }
 
       if (sortColumn === "category") {
-        const aName = (a.category != null ? categories.find((c) => c.category_I === a.category)?.name : null) ?? "";
-        const bName = (b.category != null ? categories.find((c) => c.category_I === b.category)?.name : null) ?? "";
+        const aName = getCategoryLabel(a.category, categories);
+        const bName = getCategoryLabel(b.category, categories);
         const aStr = aName.toLowerCase();
         const bStr = bName.toLowerCase();
         if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
@@ -998,13 +998,7 @@ export default function ExpensesEditor() {
                     isClearable
                     isSearchable
                     options={categoryOptions}
-                    value={
-                      exp.category != null
-                        ? categoryOptions.find(
-                            (o) => o.value === String(exp.category)
-                          ) ?? null
-                        : categoryOptions.find((o) => o.value === "") ?? null
-                    }
+                    value={resolveCategorySelectValue(categoryOptions, exp.category)}
                     onChange={(opt: SingleValue<{ value: string; label: string }>) =>
                       optimisticUpdate(
                         exp,
@@ -1215,13 +1209,7 @@ export default function ExpensesEditor() {
                   isClearable
                   isSearchable
                   options={categoryOptions}
-                  value={
-                    draftNewRow.category != null
-                      ? categoryOptions.find(
-                          (o) => o.value === String(draftNewRow.category)
-                        ) ?? null
-                      : categoryOptions.find((o) => o.value === "") ?? null
-                  }
+                  value={resolveCategorySelectValue(categoryOptions, draftNewRow.category)}
                   onChange={(opt: SingleValue<{ value: string; label: string }>) =>
                     updateDraft(
                       "category",
@@ -1294,13 +1282,7 @@ export default function ExpensesEditor() {
                 isClearable
                 isSearchable
                 options={categoryOptions}
-                value={
-                  bulkUpdateForm.category != null
-                    ? categoryOptions.find(
-                        (o) => o.value === String(bulkUpdateForm.category)
-                      ) ?? null
-                    : categoryOptions.find((o) => o.value === "") ?? null
-                }
+                value={resolveCategorySelectValue(categoryOptions, bulkUpdateForm.category)}
                 onChange={(opt: SingleValue<{ value: string; label: string }>) =>
                   setBulkUpdateForm({
                     ...bulkUpdateForm,

@@ -1,0 +1,137 @@
+.categories-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.categories-page__header h1 {
+  margin: 0 0 0.25rem;
+}
+
+.categories-page__subtitle {
+  margin: 0 0 1.5rem;
+  color: #555;
+}
+
+.categories-page__error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.categories-page__add {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.categories-page__add h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.categories-page__add-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.categories-page__add-form input[type="text"] {
+  min-width: 200px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.categories-page__add-form button {
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+.categories-page__add-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.categories-page__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.categories-page__toolbar {
+  margin-bottom: 0.75rem;
+}
+
+.categories-page__table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.categories-page__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.categories-page__table th,
+.categories-page__table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.categories-page__table th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+.categories-page__row--archived {
+  opacity: 0.55;
+}
+
+.categories-page__name-input {
+  width: 100%;
+  min-width: 140px;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+}
+
+.categories-page__name-input:hover,
+.categories-page__name-input:focus {
+  border-color: #d1d5db;
+  background: #fff;
+}
+
+.categories-page__name-input--child {
+  padding-left: 1.25rem;
+}
+
+.categories-page__delete {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border: 1px solid #fca5a5;
+  background: #fff;
+  color: #b91c1c;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.categories-page__delete:hover {
+  background: #fef2f2;
+}
