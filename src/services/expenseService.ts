@@ -166,9 +166,9 @@ export async function updateExpense(id: number, updates: Partial<Expense>): Prom
       expenseDate: updates.date ?? mockExpenses[index].expenseDate,
       expense: updates.description ?? mockExpenses[index].expense,
       amount: updates.amount ?? mockExpenses[index].amount,
-      paymentMethod: updates.paymentMethod ?? mockExpenses[index].paymentMethod,
-      category: updates.category ?? mockExpenses[index].category,
-      datePaid: updates.datePaid ?? mockExpenses[index].datePaid,
+      paymentMethod: "paymentMethod" in updates ? updates.paymentMethod ?? undefined : mockExpenses[index].paymentMethod,
+      category: "category" in updates ? updates.category ?? undefined : mockExpenses[index].category,
+      datePaid: "datePaid" in updates ? updates.datePaid ?? undefined : mockExpenses[index].datePaid,
       modifiedDateTime: new Date().toISOString(),
     });
     return toExpense(mockExpenses[index]);
@@ -189,9 +189,9 @@ export async function updateExpense(id: number, updates: Partial<Expense>): Prom
     expenseDate: updates.date ?? mockExpenses[index].expenseDate,
     expense: updates.description ?? mockExpenses[index].expense,
     amount: updates.amount ?? mockExpenses[index].amount,
-    paymentMethod: updates.paymentMethod ?? mockExpenses[index].paymentMethod,
-    category: updates.category ?? mockExpenses[index].category,
-    datePaid: updates.datePaid ?? mockExpenses[index].datePaid,
+    paymentMethod: "paymentMethod" in updates ? updates.paymentMethod ?? undefined : mockExpenses[index].paymentMethod,
+    category: "category" in updates ? updates.category ?? undefined : mockExpenses[index].category,
+    datePaid: "datePaid" in updates ? updates.datePaid ?? undefined : mockExpenses[index].datePaid,
     modifiedDateTime: new Date().toISOString(),
   });
   return toExpense(mockExpenses[index]);

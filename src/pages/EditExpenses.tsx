@@ -397,7 +397,7 @@ export default function EditExpenses() {
         (patchId: number, patchField: string, patchValue: string | number | boolean | null | undefined, exp: Expense) => {
           const current = expensesRef.current.find((x) => expIdNum(x) === patchId);
           const payload: Partial<Expense> = {
-            [patchField]: patchValue === undefined || patchValue === null ? undefined : patchValue,
+            [patchField]: patchValue,
             modifiedDateTime: current?.modifiedDateTime ?? exp.modifiedDateTime,
           };
           updateExpense(patchId, payload)
@@ -418,7 +418,7 @@ export default function EditExpenses() {
                 }).then((result) => {
                   if (result.isConfirmed) {
                     updateExpense(patchId, {
-                      [patchField]: patchValue === undefined || patchValue === null ? undefined : patchValue,
+                      [patchField]: patchValue,
                       modifiedDateTime: err.currentExpense.modifiedDateTime,
                     })
                       .then((updated) => {
@@ -974,7 +974,7 @@ export default function EditExpenses() {
                       optimisticUpdate(
                         exp,
                         "paymentMethod",
-                        !opt || opt.value === "" ? undefined : Number(opt.value)
+                        !opt || opt.value === "" ? null : Number(opt.value)
                       )
                     }
                     styles={{
@@ -1008,7 +1008,7 @@ export default function EditExpenses() {
                       optimisticUpdate(
                         exp,
                         "category",
-                        !opt || opt.value === "" ? undefined : Number(opt.value)
+                        !opt || opt.value === "" ? null : Number(opt.value)
                       )
                     }
                     isDisabled={exp.isSplit ?? false}
@@ -1185,7 +1185,7 @@ export default function EditExpenses() {
                   onChange={(opt: SingleValue<{ value: string; label: string }>) =>
                     updateDraft(
                       "paymentMethod",
-                      !opt || opt.value === "" ? undefined : Number(opt.value)
+                      !opt || opt.value === "" ? null : Number(opt.value)
                     )
                   }
                   styles={{
@@ -1218,7 +1218,7 @@ export default function EditExpenses() {
                   onChange={(opt: SingleValue<{ value: string; label: string }>) =>
                     updateDraft(
                       "category",
-                      !opt || opt.value === "" ? undefined : Number(opt.value)
+                      !opt || opt.value === "" ? null : Number(opt.value)
                     )
                   }
                   styles={{
