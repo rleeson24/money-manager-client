@@ -1,5 +1,5 @@
 /**
- * Types for the expense editor page (ChatGPTEditExpenses).
+ * Types for the expense editor page (EditExpenses).
  */
 
 export interface Expense {

@@ -10,8 +10,8 @@ import AppLayout from "./components/AppLayout";
 import RequireAuth from "./components/RequireAuth";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
+import AddExpense from "./pages/AddExpense";
 import EditExpenses from "./pages/EditExpenses";
-import ChatGPTEditExpenses from "./pages/ChatGPTEditExpenses";
 import CreditCardExpenses from "./pages/CreditCardExpenses";
 import ImportPage from "./pages/ImportPage";
 import CategoriesPage from "./pages/CategoriesPage";
@@ -29,13 +29,13 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppLayout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/expenses/edit" element={<EditExpenses />} />
-            <Route path="/expenses/chatgptedit" element={<ChatGPTEditExpenses />} />
+            <Route path="/expenses/edit" element={<AddExpense />} />
+            <Route path="/expenses/chatgptedit" element={<EditExpenses />} />
             <Route path="/expenses/creditcard" element={<CreditCardExpenses />} />
             <Route path="/import" element={<ImportPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
-            <Route path="/expenses/edit/:id" element={<EditExpenses />} />
-            <Route path="/expenses/edit/new" element={<EditExpenses />} />
+            <Route path="/expenses/edit/:id" element={<AddExpense />} />
+            <Route path="/expenses/edit/new" element={<AddExpense />} />
           </Route>
         </Route>
       </Routes>

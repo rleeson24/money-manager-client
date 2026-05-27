@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Button,
   Input,
@@ -185,7 +186,7 @@ export function ExpenseSplitDialog({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <Dialog open={open}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
@@ -302,6 +303,7 @@ export function ExpenseSplitDialog({
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+    </Dialog>,
+    document.body
   );
 }
