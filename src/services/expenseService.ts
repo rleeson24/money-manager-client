@@ -26,6 +26,7 @@ interface ApiExpense {
   createdDateTime?: string;
   modifiedDateTime?: string;
   isSplit?: boolean;
+  excludeFromCredit?: boolean;
 }
 
 function toExpense(api: ApiExpense): Expense {
@@ -41,6 +42,7 @@ function toExpense(api: ApiExpense): Expense {
     createdDateTime: api.createdDateTime,
     modifiedDateTime: api.modifiedDateTime,
     isSplit: api.isSplit ?? false,
+    excludeFromCredit: api.excludeFromCredit ?? false,
   };
 }
 
@@ -56,6 +58,7 @@ function expenseToApiBody(expense: Omit<Expense, "id"> | Partial<Expense>): Reco
   if ("createdDateTime" in expense && expense.createdDateTime !== undefined) body.CreatedDateTime = expense.createdDateTime;
   if ("modifiedDateTime" in expense && expense.modifiedDateTime !== undefined) body.ModifiedDateTime = expense.modifiedDateTime;
   if ("isSplit" in expense && expense.isSplit !== undefined) body.IsSplit = expense.isSplit;
+  if ("excludeFromCredit" in expense && expense.excludeFromCredit !== undefined) body.ExcludeFromCredit = expense.excludeFromCredit;
   return body;
 }
 

@@ -21,4 +21,6 @@ export interface Expense {
   modifiedDateTime?: string
   /** True when this expense has split lines (sub-charges by category). */
   isSplit?: boolean
+  /** True when this expense should be excluded from credit card payoff totals. */
+  excludeFromCredit?: boolean
 }

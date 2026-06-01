@@ -36,7 +36,6 @@ export default function CreditCardExpenses() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null);
-  const [excludedExpenses, setExcludedExpenses] = useState<Set<number>>(new Set());
   const [dirtyCells, setDirtyCells] = useState<CellState>({});
   const [errorCells, setErrorCells] = useState<CellState>({});
   const [sortColumn, setSortColumn] = useState<SortColumn>("date");
@@ -140,8 +139,6 @@ export default function CreditCardExpenses() {
       });
       if (ac.signal.aborted) return;
       setExpenses(data);
-      // Clear excluded expenses when loading new data
-      setExcludedExpenses(new Set());
     } catch (err: unknown) {
       if (ac.signal.aborted || isAbortError(err)) return;
       console.error("Error loading expenses:", err);
@@ -166,7 +163,7 @@ export default function CreditCardExpenses() {
     return () => window.removeEventListener("keydown", handleUndo);
   }, []);
 
-  function optimisticUpdate(id: number, field: string, value: string | number | null | undefined) {
+  function optimisticUpdate(id: number, field: string, value: string | number | boolean | null | undefined) {
     undoStack.current.push([...expenses]);
 
     setDirtyCells((d) => ({ ...d, [`${id}-${field}`]: true }));
@@ -265,17 +262,6 @@ export default function CreditCardExpenses() {
     return "⇅";
   }
 
-  // Handle exclude checkbox
-  function handleExcludeToggle(expenseId: number, checked: boolean) {
-    const newExcluded = new Set(excludedExpenses);
-    if (checked) {
-      newExcluded.add(expenseId);
-    } else {
-      newExcluded.delete(expenseId);
-    }
-    setExcludedExpenses(newExcluded);
-  }
-
   function expIdNum(exp: Expense): number {
     return typeof exp.id === "number" ? exp.id : parseInt(String(exp.id), 10);
   }
@@ -283,15 +269,15 @@ export default function CreditCardExpenses() {
   // Calculate Credit Owed (sum of all amounts except excluded)
   function calculateCreditOwed(): number {
     return expenses
-      .filter((exp) => !excludedExpenses.has(expIdNum(exp)))
+      .filter((exp) => !exp.excludeFromCredit)
       .reduce((sum, exp) => sum + (exp.amount || 0), 0);
   }
 
   // Mark selected expenses as paid
   function handleMarkAsPaid() {
     const today = new Date().toISOString().split("T")[0];
-    const toUpdate = expenses.filter((exp) => !excludedExpenses.has(expIdNum(exp)));
-    
+    const toUpdate = expenses.filter((exp) => !exp.excludeFromCredit);
+
     if (toUpdate.length === 0) {
       setError("No expenses selected to mark as paid");
       return;
@@ -424,14 +410,17 @@ export default function CreditCardExpenses() {
                   return (
                   <tr key={id} className="border-b border-gray-200 even:bg-gray-50/50 hover:bg-slate-50">
                     <td className="w-10 p-1.5 text-center align-middle border-b border-gray-200">
-                      <input
-                        type="checkbox"
-                        checked={excludedExpenses.has(id)}
-                        onChange={(e) =>
-                          handleExcludeToggle(id, e.target.checked)
-                        }
-                        className="cursor-pointer w-full"
-                      />
+                      <div className="flex items-center justify-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={!!exp.excludeFromCredit}
+                          onChange={(e) =>
+                            optimisticUpdate(id, "excludeFromCredit", e.target.checked)
+                          }
+                          className="cursor-pointer"
+                        />
+                        {cellBadge(id, "excludeFromCredit")}
+                      </div>
                     </td>
                     <td className="w-32 p-1.5 align-middle border-b border-gray-200">
                       <div className="flex items-center gap-1 w-full [&_input]:w-full [&_input]:focus:outline-2 [&_input]:focus:outline-blue-500 [&_input]:focus:outline-offset-[-1px] [&_input]:focus:bg-blue-50/50 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-inset">
