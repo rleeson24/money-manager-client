@@ -3,10 +3,14 @@
  * 
  * Defines the structure of an expense object in the application
  */
+export const DEFAULT_EXPENSE_CURRENCY = "USD";
+
 export interface Expense {
   id: string | number
   description: string
   amount: number
+  /** ISO 4217 currency code (e.g. USD). Defaults to USD until user selection is added. */
+  currency?: string
   category?: number | null
   date: string // ISO date string format: YYYY-MM-DD
   notes?: string | null

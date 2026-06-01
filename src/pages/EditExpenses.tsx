@@ -23,6 +23,7 @@ import { ExpenseSplitDialog } from "../components/ExpenseSplitDialog";
 import type { ExpenseSplit } from "../types/expenseSplit";
 import Swal from "sweetalert2";
 import type { Expense } from "../types/expense";
+import { DEFAULT_EXPENSE_CURRENCY } from "../types/expense";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
 import {
@@ -704,6 +705,7 @@ export default function EditExpenses() {
         date: draftNewRow.date || localDateInputToUtc(`${month}-01`),
         description: draftNewRow.description?.trim() ?? "",
         amount: amountNum,
+        currency: DEFAULT_EXPENSE_CURRENCY,
         paymentMethod: draftNewRow.paymentMethod ?? null,
         category: draftNewRow.category ?? null,
       };

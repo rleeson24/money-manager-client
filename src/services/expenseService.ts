@@ -1,5 +1,6 @@
 import { USE_API, apiJson, ApiError } from "../config/api";
 import type { Expense } from "../types/expense";
+import { DEFAULT_EXPENSE_CURRENCY } from "../types/expense";
 
 /** Thrown when the server returns 409 Conflict (expense was already updated). */
 export class UpdateConflictError extends Error {
@@ -18,6 +19,7 @@ interface ApiExpense {
   expenseDate: string;
   expense: string;
   amount: number;
+  currency?: string;
   paymentMethod?: number;
   category?: number;
   datePaid?: string;
@@ -32,6 +34,7 @@ function toExpense(api: ApiExpense): Expense {
     date: api.expenseDate,
     description: api.expense,
     amount: api.amount,
+    currency: api.currency ?? DEFAULT_EXPENSE_CURRENCY,
     paymentMethod: api.paymentMethod ?? null,
     category: api.category ?? null,
     datePaid: api.datePaid ?? null,
@@ -46,6 +49,7 @@ function expenseToApiBody(expense: Omit<Expense, "id"> | Partial<Expense>): Reco
   if ("date" in expense && expense.date !== undefined) body.ExpenseDate = expense.date;
   if ("description" in expense && expense.description !== undefined) body.Expense = expense.description;
   if ("amount" in expense && expense.amount !== undefined) body.Amount = expense.amount;
+  if ("currency" in expense && expense.currency !== undefined) body.Currency = expense.currency;
   if ("paymentMethod" in expense && expense.paymentMethod !== undefined) body.PaymentMethod = expense.paymentMethod;
   if ("category" in expense && expense.category !== undefined) body.Category = expense.category;
   if ("datePaid" in expense && expense.datePaid !== undefined) body.DatePaid = expense.datePaid;
@@ -57,15 +61,15 @@ function expenseToApiBody(expense: Omit<Expense, "id"> | Partial<Expense>): Reco
 
 // ---------- Mock data (used when USE_API is false) ----------
 const mockExpenses: ApiExpense[] = [
-  { expense_I: 1, expenseDate: "2026-01-19T00:00:00", expense: "COPA AIRLINES PANAMA PAN", amount: 126.34, paymentMethod: 1, category: 1, datePaid: undefined, createdDateTime: "2026-01-19T12:00:00Z", modifiedDateTime: "2026-01-19T12:00:00Z" },
-  { expense_I: 2, expenseDate: "2026-01-22T00:00:00", expense: "Freddy's - custard", amount: 5.51, paymentMethod: 1, category: 2, datePaid: undefined, createdDateTime: "2026-01-22T12:00:00Z", modifiedDateTime: "2026-01-22T12:00:00Z" },
-  { expense_I: 3, expenseDate: "2026-01-22T00:00:00", expense: "WALMART.COM - David birthday present - couch", amount: 83.30, paymentMethod: 1, category: 3, datePaid: undefined, createdDateTime: "2026-01-22T12:00:00Z", modifiedDateTime: "2026-01-22T12:00:00Z" },
-  { expense_I: 4, expenseDate: "2026-01-23T00:00:00", expense: "Gas Station", amount: 45.0, paymentMethod: 1, category: 4, datePaid: undefined, createdDateTime: "2026-01-23T12:00:00Z", modifiedDateTime: "2026-01-23T12:00:00Z" },
-  { expense_I: 5, expenseDate: "2026-01-24T00:00:00", expense: "Ross - return lita shoes", amount: 21.79, paymentMethod: 1, category: 1, datePaid: undefined, createdDateTime: "2026-01-24T12:00:00Z", modifiedDateTime: "2026-01-24T12:00:00Z" },
-  { expense_I: 6, expenseDate: "2026-01-25T00:00:00", expense: "AMAZON - Luca Christmas gift", amount: 15.99, paymentMethod: 1, category: 8, datePaid: undefined, createdDateTime: "2026-01-25T12:00:00Z", modifiedDateTime: "2026-01-25T12:00:00Z" },
-  { expense_I: 7, expenseDate: "2026-01-26T00:00:00", expense: "Pharmacy - Prescription", amount: 32.5, paymentMethod: 1, category: 5, datePaid: undefined, createdDateTime: "2026-01-26T12:00:00Z", modifiedDateTime: "2026-01-26T12:00:00Z" },
-  { expense_I: 8, expenseDate: "2026-01-27T00:00:00", expense: "Groceries - Whole Foods", amount: 125.5, paymentMethod: 1, category: 6, datePaid: undefined, createdDateTime: "2026-01-27T12:00:00Z", modifiedDateTime: "2026-01-27T12:00:00Z" },
-  { expense_I: 9, expenseDate: "2026-01-28T00:00:00", expense: "Outdoor Equipment", amount: 89.25, paymentMethod: 1, category: 7, datePaid: undefined, createdDateTime: "2026-01-28T12:00:00Z", modifiedDateTime: "2026-01-28T12:00:00Z" },
+  { expense_I: 1, expenseDate: "2026-01-19T00:00:00", expense: "COPA AIRLINES PANAMA PAN", amount: 126.34, currency: DEFAULT_EXPENSE_CURRENCY, paymentMethod: 1, category: 1, datePaid: undefined, createdDateTime: "2026-01-19T12:00:00Z", modifiedDateTime: "2026-01-19T12:00:00Z" },
+  { expense_I: 2, expenseDate: "2026-01-22T00:00:00", expense: "Freddy's - custard", amount: 5.51, currency: DEFAULT_EXPENSE_CURRENCY, paymentMethod: 1, category: 2, datePaid: undefined, createdDateTime: "2026-01-22T12:00:00Z", modifiedDateTime: "2026-01-22T12:00:00Z" },
+  { expense_I: 3, expenseDate: "2026-01-22T00:00:00", expense: "WALMART.COM - David birthday present - couch", amount: 83.30, currency: DEFAULT_EXPENSE_CURRENCY, paymentMethod: 1, category: 3, datePaid: undefined, createdDateTime: "2026-01-22T12:00:00Z", modifiedDateTime: "2026-01-22T12:00:00Z" },
+  { expense_I: 4, expenseDate: "2026-01-23T00:00:00", expense: "Gas Station", amount: 45.0, currency: DEFAULT_EXPENSE_CURRENCY, paymentMethod: 1, category: 4, datePaid: undefined, createdDateTime: "2026-01-23T12:00:00Z", modifiedDateTime: "2026-01-23T12:00:00Z" },
+  { expense_I: 5, expenseDate: "2026-01-24T00:00:00", expense: "Ross - return lita shoes", amount: 21.79, currency: DEFAULT_EXPENSE_CURRENCY, paymentMethod: 1, category: 1, datePaid: undefined, createdDateTime: "2026-01-24T12:00:00Z", modifiedDateTime: "2026-01-24T12:00:00Z" },
+  { expense_I: 6, expenseDate: "2026-01-25T00:00:00", expense: "AMAZON - Luca Christmas gift", amount: 15.99, currency: DEFAULT_EXPENSE_CURRENCY, paymentMethod: 1, category: 8, datePaid: undefined, createdDateTime: "2026-01-25T12:00:00Z", modifiedDateTime: "2026-01-25T12:00:00Z" },
+  { expense_I: 7, expenseDate: "2026-01-26T00:00:00", expense: "Pharmacy - Prescription", amount: 32.5, currency: DEFAULT_EXPENSE_CURRENCY, paymentMethod: 1, category: 5, datePaid: undefined, createdDateTime: "2026-01-26T12:00:00Z", modifiedDateTime: "2026-01-26T12:00:00Z" },
+  { expense_I: 8, expenseDate: "2026-01-27T00:00:00", expense: "Groceries - Whole Foods", amount: 125.5, currency: DEFAULT_EXPENSE_CURRENCY, paymentMethod: 1, category: 6, datePaid: undefined, createdDateTime: "2026-01-27T12:00:00Z", modifiedDateTime: "2026-01-27T12:00:00Z" },
+  { expense_I: 9, expenseDate: "2026-01-28T00:00:00", expense: "Outdoor Equipment", amount: 89.25, currency: DEFAULT_EXPENSE_CURRENCY, paymentMethod: 1, category: 7, datePaid: undefined, createdDateTime: "2026-01-28T12:00:00Z", modifiedDateTime: "2026-01-28T12:00:00Z" },
 ];
 
 let lastMockConflictModified: string | null = null;
@@ -203,7 +207,10 @@ export async function updateExpense(id: number, updates: Partial<Expense>): Prom
  */
 export async function createExpense(expense: Omit<Expense, "id">): Promise<Expense> {
   if (USE_API) {
-    const body = expenseToApiBody(expense);
+    const body = expenseToApiBody({
+      ...expense,
+      currency: expense.currency ?? DEFAULT_EXPENSE_CURRENCY,
+    });
     const data = await apiJson<ApiExpense>("/api/expenses", { method: "POST", body: JSON.stringify(body) }, "Failed to create expense");
     if (!data) throw new Error("Create failed: no response body");
     return toExpense(data);
@@ -215,6 +222,7 @@ export async function createExpense(expense: Omit<Expense, "id">): Promise<Expen
     expenseDate: expense.date,
     expense: expense.description,
     amount: expense.amount,
+    currency: expense.currency ?? DEFAULT_EXPENSE_CURRENCY,
     paymentMethod: expense.paymentMethod ?? undefined,
     category: expense.category ?? undefined,
     datePaid: expense.datePaid ?? undefined,

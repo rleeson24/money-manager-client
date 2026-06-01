@@ -12,6 +12,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Expense } from "../types/expense";
+import { DEFAULT_EXPENSE_CURRENCY } from "../types/expense";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 import ReactSelect, { SingleValue } from "react-select";
 import { getCategories, type Category } from "../services/categoryService";
@@ -54,6 +55,7 @@ function AddExpense() {
   const [formData, setFormData] = useState<Expense>({
     description: "",
     amount: 0,
+    currency: DEFAULT_EXPENSE_CURRENCY,
     category: null,
     date: todayUtcExpenseDate(),
     notes: "",
@@ -113,6 +115,7 @@ function AddExpense() {
     return {
       description: formData.description.trim(),
       amount: amountNum,
+      currency: formData.currency ?? DEFAULT_EXPENSE_CURRENCY,
       category: formData.category,
       date: formData.date,
       notes: formData.notes || null,
