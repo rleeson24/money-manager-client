@@ -10,7 +10,7 @@ function LoginPage() {
   const isAuthenticated = useIsAuthenticated();
   const location = useLocation();
   const from =
-    (location.state as { from?: string } | null)?.from ?? "/expenses/edit";
+    (location.state as { from?: string } | null)?.from ?? "/expenses/add";
 
   useEffect(() => {
     if (!isAuthEnabled || !USE_API) return;

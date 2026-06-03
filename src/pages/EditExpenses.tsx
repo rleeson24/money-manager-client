@@ -293,8 +293,9 @@ export default function EditExpenses() {
         }
         return;
       }
-      if (e.ctrlKey && e.shiftKey && (e.key === "D" || e.key === "d")) {
+      if (e.ctrlKey && e.altKey && !e.shiftKey && (e.key === "D" || e.key === "d")) {
         e.preventDefault();
+        e.stopPropagation();
         if (isSavingDraft) return;
         const row = draftRowRef.current;
         if (!row) return;
@@ -304,8 +305,8 @@ export default function EditExpenses() {
         }, 0);
       }
     }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [isSavingDraft]);
 
   function clearAmountEditing(id: number) {
@@ -1269,7 +1270,7 @@ export default function EditExpenses() {
         </table>
 
         <p className="text-xs text-muted-foreground mt-2">
-          ⚠ Unsaved · ❌ Error · Ctrl+Z Undo · Ctrl+Shift+D: new expense date · Bottom row: new expense (saves when you enter date, description, or amount)
+          ⚠ Unsaved · ❌ Error · Ctrl+Z Undo · Ctrl+Alt+D: new expense date · Bottom row: new expense (saves when you enter date, description, or amount)
         </p>
       </CardContent>
 

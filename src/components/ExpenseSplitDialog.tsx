@@ -85,6 +85,9 @@ export function ExpenseSplitDialog({
   onSaveSuccess,
   onCancel,
 }: ExpenseSplitDialogProps) {
+  const defaultCategoryId =
+    categories.find((c) => c.name !== "Split" && !c.archived)?.category_I ?? 6;
+
   const [rows, setRows] = useState<SplitRow[]>(() =>
     initialSplits.length > 0
       ? initialSplits.map(toRow)
@@ -107,8 +110,6 @@ export function ExpenseSplitDialog({
       }),
     [categories]
   );
-  const defaultCategoryId =
-    categories.find((c) => c.name !== "Split" && !c.archived)?.category_I ?? 6;
 
   useEffect(() => {
     if (open) {
