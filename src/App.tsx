@@ -29,8 +29,8 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route element={<AppLayout />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/expenses/edit" element={<AddExpense />} />
-            <Route path="/expenses/chatgptedit" element={<EditExpenses />} />
+            <Route path="/expenses/add" element={<AddExpense />} />
+            <Route path="/expenses" element={<EditExpenses />} />
             <Route path="/expenses/creditcard" element={<CreditCardExpenses />} />
             <Route path="/import" element={<ImportPage />} />
             <Route path="/categories" element={<CategoriesPage />} />

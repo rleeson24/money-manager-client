@@ -131,6 +131,14 @@ function focusExpenseRowField(expenseRowEl: HTMLTableRowElement | null, field: D
   );
 }
 
+function focusDraftRowField(draftRowEl: HTMLTableRowElement | null, field: DraftFocusField): void {
+  if (!draftRowEl) return;
+  focusWithinFieldHost(
+    draftRowEl.querySelector(`[data-draft-focus="${field}"]`),
+    field
+  );
+}
+
 export default function EditExpenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -277,17 +285,28 @@ export default function EditExpenses() {
   }, [month, debouncedSearchTerm]);
 
   useEffect(() => {
-    function handleUndo(e: KeyboardEvent) {
+    function handleKeyDown(e: KeyboardEvent) {
       if (e.ctrlKey && e.key === "z" && undoStack.current.length) {
         const prev = undoStack.current.pop();
         if (prev) {
           setExpenses(prev);
         }
+        return;
+      }
+      if (e.ctrlKey && e.shiftKey && (e.key === "D" || e.key === "d")) {
+        e.preventDefault();
+        if (isSavingDraft) return;
+        const row = draftRowRef.current;
+        if (!row) return;
+        window.setTimeout(() => {
+          row.scrollIntoView({ block: "nearest", inline: "nearest" });
+          focusDraftRowField(row, "date");
+        }, 0);
       }
     }
-    window.addEventListener("keydown", handleUndo);
-    return () => window.removeEventListener("keydown", handleUndo);
-  }, []);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSavingDraft]);
 
   function clearAmountEditing(id: number) {
     setEditingAmount((prev) => {
@@ -1250,7 +1269,7 @@ export default function EditExpenses() {
         </table>
 
         <p className="text-xs text-muted-foreground mt-2">
-          ⚠ Unsaved · ❌ Error · Ctrl+Z Undo · Bottom row: new expense (saves when you enter date, description, or amount)
+          ⚠ Unsaved · ❌ Error · Ctrl+Z Undo · Ctrl+Shift+D: new expense date · Bottom row: new expense (saves when you enter date, description, or amount)
         </p>
       </CardContent>
 

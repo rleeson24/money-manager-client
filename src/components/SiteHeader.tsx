@@ -53,8 +53,8 @@ const iconCategories = (
 );
 
 const navItems = [
-  { to: "/expenses/edit", label: "Add Expense", icon: iconEdit },
-  { to: "/expenses/chatgptedit", label: "Edit Expenses", icon: iconChatGPT },
+  { to: "/expenses/add", label: "Add Expense", icon: iconEdit },
+  { to: "/expenses", label: "Edit Expenses", icon: iconChatGPT },
   { to: "/expenses/creditcard", label: "Credit Card Expenses", icon: iconCreditCard },
   { to: "/import", label: "Banking Import", icon: iconBanking },
   { to: "/categories", label: "Categories", icon: iconCategories },
