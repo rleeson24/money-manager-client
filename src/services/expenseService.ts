@@ -81,13 +81,14 @@ export type { Expense };
 
 /**
  * Get expenses with optional filters.
- * When USE_API: GET /api/expenses (month, paymentMethod, datePaidNull). Search is applied client-side if provided.
+ * When USE_API: GET /api/expenses (month, paymentMethod, datePaidNull, currency). Search is applied client-side if provided.
  */
 export async function getExpenses(params?: {
   month?: string;
   search?: string;
   paymentMethod?: number;
   datePaidNull?: boolean;
+  currency?: string;
   signal?: AbortSignal;
 }): Promise<Expense[]> {
   if (USE_API) {
@@ -95,6 +96,7 @@ export async function getExpenses(params?: {
     if (params?.month) searchParams.set("month", params.month);
     if (params?.paymentMethod != null) searchParams.set("paymentMethod", String(params.paymentMethod));
     if (params?.datePaidNull != null) searchParams.set("datePaidNull", String(params.datePaidNull));
+    if (params?.datePaidNull) searchParams.set("currency", params.currency ?? DEFAULT_EXPENSE_CURRENCY);
     const qs = searchParams.toString();
     const data = await apiJson<ApiExpense[]>(`/api/expenses${qs ? `?${qs}` : ""}`, { signal: params?.signal }, "Failed to fetch expenses");
     let list = (Array.isArray(data) ? data : []).map(toExpense);
@@ -113,7 +115,12 @@ export async function getExpenses(params?: {
   let filtered = [...mockExpenses];
   if (params?.month) filtered = filtered.filter((exp) => exp.expenseDate.substring(0, 7) === params.month);
   if (params?.paymentMethod != null) filtered = filtered.filter((exp) => exp.paymentMethod === params.paymentMethod);
-  if (params?.datePaidNull) filtered = filtered.filter((exp) => exp.datePaid == null);
+  if (params?.datePaidNull) {
+    const currency = params.currency ?? DEFAULT_EXPENSE_CURRENCY;
+    filtered = filtered.filter(
+      (exp) => exp.datePaid == null && (exp.currency ?? DEFAULT_EXPENSE_CURRENCY) === currency
+    );
+  }
   if (params?.search?.trim()) {
     const term = params.search.trim().toLowerCase();
     filtered = filtered.filter(
