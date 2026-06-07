@@ -96,14 +96,16 @@ function AddExpense() {
   }
 
   function getValidatedAmount(): number | null {
-    const amountNum = parseFloat(formatAmountForBlur(amountStr)) || 0;
-    if (amountNum <= 0) return null;
+    const formatted = formatAmountForBlur(amountStr);
+    if (formatted === "" || formatted === "-") return null;
+    const amountNum = parseFloat(formatted);
+    if (Number.isNaN(amountNum) || amountNum === 0) return null;
     return amountNum;
   }
 
   function validateForm(): string | null {
     if (!formData.description.trim()) return "Description is required";
-    if (getValidatedAmount() == null) return "Amount must be greater than 0";
+    if (getValidatedAmount() == null) return "Amount must be a non-zero number";
     if (formData.category == null || formData.category === undefined) {
       return "Category is required";
     }
