@@ -181,11 +181,11 @@ export default function ImportPage() {
                     <h3>{section.label}</h3>
                     <div className="import-section-row">
                       <label className="import-file-label">
-                        <span className="import-file-label-text">File (OFX/QFX/CSV):</span>
+                        <span className="import-file-label-text">File (CSV):</span>
                         <span className="import-file-input-wrap">
                           <input
                             type="file"
-                            accept=".ofx,.qfx,.csv"
+                            accept=".csv"
                             disabled={isImporting}
                             onChange={(e) => {
                               const file = e.target.files?.[0];

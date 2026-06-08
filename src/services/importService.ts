@@ -108,10 +108,6 @@ export const IMPORT_SOURCES = {
 } as const satisfies Record<string, ImportSource>;
 
 /** Infer format from file extension. */
-export function formatFromFile(file: File): string {
-  const name = file.name.toLowerCase();
-  if (name.endsWith(".qfx")) return "QFX";
-  if (name.endsWith(".ofx")) return "OFX";
-  if (name.endsWith(".csv")) return "CSV";
+export function formatFromFile(_file: File): string {
   return "CSV";
 }
