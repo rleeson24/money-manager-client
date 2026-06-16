@@ -165,7 +165,6 @@ export default function EditExpenses() {
   const [focusedAmountId, setFocusedAmountId] = useState<number | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const undoStack = useRef<Expense[][]>([]);
-  const hadDraftContent = useRef(false);
   const pendingPostSaveFocusRef = useRef<{
     expenseId: number | null;
     field: DraftFocusField;
@@ -219,7 +218,7 @@ export default function EditExpenses() {
     return Math.min(320, 24 + maxLen * 8);
   }, [categoryOptions]);
 
-  // Draft row for "add new" - not in database until user fills and blurs
+  // Draft row for "add new" - saved after user stops editing (debounced)
   const today = () => todayUtcExpenseDate();
   const [draftNewRow, setDraftNewRow] = useState<{
     date: string;
@@ -234,6 +233,11 @@ export default function EditExpenses() {
     paymentMethod: undefined,
     category: undefined,
   }));
+  const draftNewRowRef = useRef(draftNewRow);
+
+  useEffect(() => {
+    draftNewRowRef.current = draftNewRow;
+  }, [draftNewRow]);
 
   // Debounce search term by 1 second (lodash debounce)
   const setDebouncedSearchTermDebounced = useMemo(
@@ -689,45 +693,50 @@ export default function EditExpenses() {
       .reduce((sum, exp) => sum + (exp.amount || 0), 0);
   }
 
-  function hasDraftContent(): boolean {
-    const amountTrimmed = draftNewRow.amount?.trim() ?? "";
+  type DraftNewRow = typeof draftNewRow;
+
+  function hasDraftContent(row: DraftNewRow = draftNewRowRef.current): boolean {
+    const amountTrimmed = row.amount?.trim() ?? "";
     const amountValid =
-      amountTrimmed !== "" && !Number.isNaN(parseFloat(draftNewRow.amount));
+      amountTrimmed !== "" && !Number.isNaN(parseFloat(row.amount));
     return (
-      ((draftNewRow.description?.trim() ?? "") !== "" ||
-      amountValid) &&
-      (draftNewRow.date?.trim() ?? "") !== ""
+      ((row.description?.trim() ?? "") !== "" || amountValid) &&
+      (row.date?.trim() ?? "") !== ""
     );
   }
 
+  const commitDraftRowDebounced = useMemo(
+    () => debounce(() => void commitDraftRow(), 1000),
+    []
+  );
+
   useEffect(() => {
     if (isSavingDraft) return;
-    if(!hasDraftContent()) {
-      hadDraftContent.current = false;
+    if (!hasDraftContent(draftNewRow)) {
+      commitDraftRowDebounced.cancel();
       return;
     }
-    if(!hadDraftContent.current) {
-      hadDraftContent.current = true;
-      commitDraftRow();
-    }
-  }, [isSavingDraft, draftNewRow]);
+    commitDraftRowDebounced();
+    return () => commitDraftRowDebounced.cancel();
+  }, [isSavingDraft, draftNewRow, commitDraftRowDebounced]);
 
   async function commitDraftRow() {
-    if (!hasDraftContent()) return;
+    const row = draftNewRowRef.current;
+    if (!hasDraftContent(row)) return;
     pendingPostSaveFocusRef.current = {
       expenseId: null,
       field: snapshotActiveDraftFocusField(draftRowRef.current),
     };
     setIsSavingDraft(true);
-    const amountNum = parseFloat(draftNewRow.amount) || 0;
+    const amountNum = parseFloat(row.amount) || 0;
     try {
       const payload = {
-        date: draftNewRow.date || localDateInputToUtc(`${month}-01`),
-        description: draftNewRow.description?.trim() ?? "",
+        date: row.date || localDateInputToUtc(`${month}-01`),
+        description: row.description?.trim() ?? "",
         amount: amountNum,
         currency: DEFAULT_EXPENSE_CURRENCY,
-        paymentMethod: draftNewRow.paymentMethod ?? null,
-        category: draftNewRow.category ?? null,
+        paymentMethod: row.paymentMethod ?? null,
+        category: row.category ?? null,
       };
       const savedExpense = await createExpense(payload);
       if (pendingPostSaveFocusRef.current) {
@@ -741,7 +750,6 @@ export default function EditExpenses() {
         paymentMethod: undefined,
         category: undefined,
       });
-      hadDraftContent.current = false;
     } catch (error) {
       pendingPostSaveFocusRef.current = null;
       console.error("Error creating expense:", error);
