@@ -1,0 +1,27 @@
+.administration-page__tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.administration-page__tab {
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  color: #4b5563;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+
+.administration-page__tab:hover {
+  color: #111827;
+}
+
+.administration-page__tab--active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import ReactSelect, { SingleValue } from "react-select";
 import {
   Card,
@@ -15,6 +14,7 @@ import {
   getCategoryLabel,
   resolveCategorySelectValue,
 } from "../utils/categoryOptions";
+import PageHeader from "../components/PageHeader";
 import { isAbortError } from "../config/api";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 
@@ -47,8 +47,6 @@ export default function CreditCardExpenses() {
   const undoStack = useRef<Expense[][]>([]);
   const debounceRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
   const loadExpensesAbortRef = useRef<AbortController | null>(null);
-
-  const navigate = useNavigate();
 
   const paymentMethodOptions = useMemo(
     () =>
@@ -302,65 +300,54 @@ export default function CreditCardExpenses() {
   }
 
   return (
-    <Card className="m-4">
-      <CardContent className="overflow-auto">
-        <div className="flex justify-between mb-4">
-          <header className="flex items-center gap-4 flex-wrap">
-            <h1 className="text-2xl font-semibold m-0">Credit Card Expenses</h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Payment Method:</label>
-                <ReactSelect
-                  classNamePrefix="pm-select"
-                  isSearchable
-                  options={paymentMethodOptions}
-                  value={
-                    selectedPaymentMethod != null
-                      ? paymentMethodOptions.find(
-                          (o) => o.value === selectedPaymentMethod.toString()
-                        ) ?? null
-                      : null
-                  }
-                  onChange={(
-                    opt: SingleValue<{ value: string; label: string }>
-                  ) =>
-                    setSelectedPaymentMethod(
-                      opt ? parseInt(opt.value, 10) : null
-                    )
-                  }
-                  styles={{
-                    container: (base) => ({ ...base, minWidth: 160 }),
-                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-                    valueContainer: (base) => ({
-                      ...base,
-                      padding: "0 6px",
-                    }),
-                    control: (base) => ({
-                      ...base,
-                      minHeight: 32,
-                      borderRadius: 6,
-                      borderColor: "#d1d5db",
-                    }),
-                  }}
-                  menuPortalTarget={document.body}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => navigate("/")}
-                className="py-2 px-4 bg-gray-100 border border-gray-200 rounded-lg text-sm hover:bg-gray-200 cursor-pointer transition-colors"
-              >
-                ← Back to Home
-              </button>
-            </div>
-          </header>
-
-          {error && (
-            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
+    <>
+      <PageHeader title="Credit Card Expenses">
+        <div className="flex items-center gap-2 shrink-0">
+          <label className="text-sm font-medium whitespace-nowrap">Payment Method:</label>
+          <ReactSelect
+            classNamePrefix="pm-select"
+            isSearchable
+            options={paymentMethodOptions}
+            value={
+              selectedPaymentMethod != null
+                ? paymentMethodOptions.find(
+                    (o) => o.value === selectedPaymentMethod.toString()
+                  ) ?? null
+                : null
+            }
+            onChange={(
+              opt: SingleValue<{ value: string; label: string }>
+            ) =>
+              setSelectedPaymentMethod(
+                opt ? parseInt(opt.value, 10) : null
+              )
+            }
+            styles={{
+              container: (base) => ({ ...base, minWidth: 160 }),
+              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              valueContainer: (base) => ({
+                ...base,
+                padding: "0 6px",
+              }),
+              control: (base) => ({
+                ...base,
+                minHeight: 32,
+                borderRadius: 6,
+                borderColor: "#d1d5db",
+              }),
+            }}
+            menuPortalTarget={document.body}
+          />
         </div>
+      </PageHeader>
+
+      <Card className="m-4">
+      <CardContent className="overflow-auto">
+        {error && (
+          <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm mb-4">
+            {error}
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-8">Loading...</div>
@@ -574,5 +561,6 @@ export default function CreditCardExpenses() {
         </div>
       </CardContent>
     </Card>
+    </>
   );
 }

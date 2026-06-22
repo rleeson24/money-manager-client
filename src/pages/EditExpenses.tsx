@@ -1,7 +1,6 @@
 import debounce from "lodash/debounce";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactSelect, { SingleValue } from "react-select";
-import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -20,6 +19,7 @@ import { getExpenses,
   createExpense } from "../services/expenseService";
 import { ExpenseSplitReadonlyGrid } from "../components/ExpenseSplitReadonlyGrid";
 import { ExpenseSplitDialog } from "../components/ExpenseSplitDialog";
+import PageHeader from "../components/PageHeader";
 import type { ExpenseSplit } from "../types/expenseSplit";
 import Swal from "sweetalert2";
 import type { Expense } from "../types/expense";
@@ -185,7 +185,6 @@ export default function EditExpenses() {
     expensesRef.current = expenses;
   }, [expenses]);
 
-  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
   const paymentMethodOptions = useMemo(
@@ -768,28 +767,14 @@ export default function EditExpenses() {
 
   return (
     <div className="w-full min-w-0">
-      <header className="w-full border-b border-gray-200 bg-white shadow-sm">
-        <div className="flex flex-wrap justify-between items-center gap-4 px-4 py-4 md:px-6">
-          <h1 className="text-xl font-semibold text-gray-900 m-0 whitespace-nowrap">
-            Edit Expenses - USD
-          </h1>
-          <div className="flex flex-wrap items-center gap-4">
-            <Input
-              type="month"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              className="w-40"
-            />
-            <Button
-              onClick={() => navigate("/")}
-              variant="primary"
-              className="!bg-gray-600 hover:!bg-gray-700 whitespace-nowrap"
-            >
-              ← Back to Home
-            </Button>
-          </div>
-        </div>
-      </header>
+      <PageHeader title="Edit Expenses - USD">
+        <Input
+          type="month"
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          className="w-40"
+        />
+      </PageHeader>
 
       <Card className="m-4">
         <CardContent className="overflow-auto">

@@ -10,7 +10,6 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import type { Expense } from "../types/expense";
 import { DEFAULT_EXPENSE_CURRENCY } from "../types/expense";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
@@ -36,6 +35,7 @@ import {
   todayUtcExpenseDate,
   utcToLocalDateInput,
 } from "../utils/expenseDate";
+import PageHeader from "../components/PageHeader";
 import "./AddExpense.css";
 
 function expIdNum(exp: Expense | { id: string | number }): number {
@@ -43,7 +43,6 @@ function expIdNum(exp: Expense | { id: string | number }): number {
 }
 
 function AddExpense() {
-  const navigate = useNavigate();
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
   const isEditMode = editingExpenseId != null;
 
@@ -305,13 +304,9 @@ function AddExpense() {
   );
 
   return (
-    <div className="add-expense-page">
-      <header className="page-header">
-        <h1>{isEditMode ? "Edit Expense" : "Manage Expenses"}</h1>
-        <button onClick={() => navigate("/")} className="back-button">
-          ← Back to Home
-        </button>
-      </header>
+    <>
+      <PageHeader title={isEditMode ? "Edit Expense" : "Manage Expenses"} />
+      <div className="add-expense-page">
 
       {error && <div className="error-message">{error}</div>}
 
@@ -505,6 +500,7 @@ function AddExpense() {
         </section>
       </div>
     </div>
+    </>
   );
 }
 

@@ -177,16 +177,12 @@ export default function CategoriesPage() {
 
   return (
     <div className="categories-page">
-      <header className="categories-page__header">
-        <h1>Categories</h1>
-        <p className="categories-page__subtitle">
-          Manage expense categories, hierarchy, and budget flags.
-        </p>
-      </header>
-
       {error && <div className="categories-page__error">{error}</div>}
 
       <section className="categories-page__add">
+        <p className="categories-page__subtitle">
+          Manage expense categories, hierarchy, and budget flags.
+        </p>
         <h2>Add category</h2>
         <form className="categories-page__add-form" onSubmit={handleCreate}>
           <input

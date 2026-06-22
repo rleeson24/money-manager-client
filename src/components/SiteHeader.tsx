@@ -33,22 +33,10 @@ const iconCreditCard = (
   </svg>
 );
 
-const iconBanking = (
+const iconAdministration = (
   <svg className="site-header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M3 21h18" />
-    <path d="M3 10h18" />
-    <path d="M5 6l7-3 7 3" />
-    <path d="M4 10v11" />
-    <path d="M20 10v11" />
-    <path d="M8 14v3" />
-    <path d="M12 14v3" />
-    <path d="M16 14v3" />
-  </svg>
-);
-
-const iconCategories = (
-  <svg className="site-header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M4 6h16M4 12h10M4 18h16" />
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
   </svg>
 );
 
@@ -56,8 +44,7 @@ const navItems = [
   { to: "/expenses/add", label: "Add Expense", icon: iconEdit },
   { to: "/expenses", label: "Edit Expenses", icon: iconChatGPT },
   { to: "/expenses/creditcard", label: "Credit Card Expenses", icon: iconCreditCard },
-  { to: "/import", label: "Banking Import", icon: iconBanking },
-  { to: "/categories", label: "Categories", icon: iconCategories },
+  { to: "/administration", label: "Administration", icon: iconAdministration },
 ] as const;
 
 function SiteHeader() {

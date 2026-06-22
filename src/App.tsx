@@ -5,7 +5,7 @@
  * It sets up routing for the application using React Router.
  */
 
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./components/AppLayout";
 import RequireAuth from "./components/RequireAuth";
 import HomePage from "./pages/HomePage";
@@ -13,6 +13,7 @@ import LoginPage from "./pages/LoginPage";
 import AddExpense from "./pages/AddExpense";
 import EditExpenses from "./pages/EditExpenses";
 import CreditCardExpenses from "./pages/CreditCardExpenses";
+import AdministrationPage from "./pages/AdministrationPage";
 import ImportPage from "./pages/ImportPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import { isAuthEnabled } from "./auth/msalConfig";
@@ -32,8 +33,13 @@ function App() {
             <Route path="/expenses/add" element={<AddExpense />} />
             <Route path="/expenses" element={<EditExpenses />} />
             <Route path="/expenses/creditcard" element={<CreditCardExpenses />} />
-            <Route path="/import" element={<ImportPage />} />
-            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/administration" element={<AdministrationPage />}>
+              <Route index element={<Navigate to="import" replace />} />
+              <Route path="import" element={<ImportPage />} />
+              <Route path="categories" element={<CategoriesPage />} />
+            </Route>
+            <Route path="/import" element={<Navigate to="/administration/import" replace />} />
+            <Route path="/categories" element={<Navigate to="/administration/categories" replace />} />
             <Route path="/expenses/edit/:id" element={<AddExpense />} />
             <Route path="/expenses/edit/new" element={<AddExpense />} />
           </Route>

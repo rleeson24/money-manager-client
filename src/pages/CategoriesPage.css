@@ -8,8 +8,8 @@
   margin: 0 0 0.25rem;
 }
 
-.categories-page__subtitle {
-  margin: 0 0 1.5rem;
+.categories-page__add .categories-page__subtitle {
+  margin: 0 0 1rem;
   color: #555;
 }
 
