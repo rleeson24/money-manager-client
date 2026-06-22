@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ReactSelect, { SingleValue } from "react-select";
 import {
   Card,
-  CardContent,
   Input,
   Button,
 } from "../components/chatGPTUIComponents";
@@ -17,6 +16,18 @@ import {
 import PageHeader from "../components/PageHeader";
 import { isAbortError } from "../config/api";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
+import "./CreditCardExpenses.css";
+
+const creditCardTableColGroup = (
+  <colgroup>
+    <col style={{ width: 40 }} />
+    <col style={{ width: 128 }} />
+    <col />
+    <col style={{ width: 112 }} />
+    <col />
+    <col style={{ width: 128 }} />
+  </colgroup>
+);
 
 interface CellState {
   [key: string]: boolean;
@@ -300,7 +311,7 @@ export default function CreditCardExpenses() {
   }
 
   return (
-    <>
+    <div className="credit-card-expenses-page w-full min-w-0">
       <PageHeader title="Credit Card Expenses">
         <div className="flex items-center gap-2 shrink-0">
           <label className="text-sm font-medium whitespace-nowrap">Payment Method:</label>
@@ -341,57 +352,62 @@ export default function CreditCardExpenses() {
         </div>
       </PageHeader>
 
-      <Card className="m-4">
-      <CardContent className="overflow-auto">
+      <Card className="credit-card-expenses-card min-w-0">
         {error && (
-          <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm mb-4">
-            {error}
-          </div>
+          <div className="credit-card-expenses-error">{error}</div>
         )}
 
         {loading ? (
-          <div className="text-center py-8">Loading...</div>
+          <div className="credit-card-expenses-loading">Loading...</div>
         ) : (
-          <>
-            <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 z-10 bg-gray-50 border-b-2 border-gray-200">
-                <tr>
-                  <th className="w-10 p-2 text-center font-semibold select-none">
-                    <span className="text-xs">Excl</span>
-                  </th>
-                  <th
-                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-32 transition-colors"
-                    onClick={() => handleSort("date")}
-                  >
-                    Date {getSortIcon("date")}
-                  </th>
-                  <th
-                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none transition-colors"
-                    onClick={() => handleSort("description")}
-                  >
-                    Expense {getSortIcon("description")}
-                  </th>
-                  <th
-                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-28 transition-colors"
-                    onClick={() => handleSort("amount")}
-                  >
-                    Amount {getSortIcon("amount")}
-                  </th>
-                  <th
-                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none transition-colors"
-                    onClick={() => handleSort("category")}
-                  >
-                    Category {getSortIcon("category")}
-                  </th>
-                  <th
-                    className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-32 transition-colors"
-                    onClick={() => handleSort("datePaid")}
-                  >
-                    Date Paid {getSortIcon("datePaid")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="credit-card-expenses-grid">
+            <div className="credit-card-expenses-grid-header">
+              <table className="credit-card-expenses-table credit-card-expenses-table--header w-full text-sm">
+                {creditCardTableColGroup}
+                <thead>
+                  <tr>
+                    <th className="w-10 p-2 text-center font-semibold select-none">
+                      <span className="text-xs">Excl</span>
+                    </th>
+                    <th
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-32 transition-colors"
+                      onClick={() => handleSort("date")}
+                    >
+                      Date {getSortIcon("date")}
+                    </th>
+                    <th
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none transition-colors"
+                      onClick={() => handleSort("description")}
+                    >
+                      Expense {getSortIcon("description")}
+                    </th>
+                    <th
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-28 transition-colors"
+                      onClick={() => handleSort("amount")}
+                    >
+                      Amount {getSortIcon("amount")}
+                    </th>
+                    <th
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none transition-colors"
+                      onClick={() => handleSort("category")}
+                    >
+                      Category {getSortIcon("category")}
+                    </th>
+                    <th
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-32 transition-colors"
+                      onClick={() => handleSort("datePaid")}
+                    >
+                      Date Paid {getSortIcon("datePaid")}
+                    </th>
+                  </tr>
+                </thead>
+              </table>
+            </div>
+
+            <div className="credit-card-expenses-table-scroll">
+              <table className="credit-card-expenses-table credit-card-expenses-table--body w-full text-sm">
+                {creditCardTableColGroup}
+                <tbody>
                 {getSortedExpenses().map((exp, r) => {
                   const id = expIdNum(exp);
                   return (
@@ -533,17 +549,18 @@ export default function CreditCardExpenses() {
                     </td>
                   </tr>
                 ); })}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
 
-            <p className="text-xs text-gray-500 mt-2">
-              ⚠ Unsaved · ❌ Error · Ctrl+Z Undo
-            </p>
-          </>
+              <p className="credit-card-expenses-legend">
+                ⚠ Unsaved · ❌ Error · Ctrl+Z Undo
+              </p>
+            </div>
+          </div>
         )}
 
-        <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
-          <Button onClick={handleMarkAsPaid} variant="primary">
+        <div className="credit-card-expenses-footer">
+          <Button onClick={handleMarkAsPaid} variant="primary" disabled={loading}>
             Mark as paid
           </Button>
           <div className="flex items-center gap-2">
@@ -555,12 +572,11 @@ export default function CreditCardExpenses() {
               className="w-32 text-right font-semibold"
             />
           </div>
-          <Button onClick={loadExpenses} variant="secondary">
+          <Button onClick={loadExpenses} variant="secondary" disabled={loading}>
             Refresh
           </Button>
         </div>
-      </CardContent>
-    </Card>
-    </>
+      </Card>
+    </div>
   );
 }

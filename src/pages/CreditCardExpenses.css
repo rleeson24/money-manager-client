@@ -1,0 +1,90 @@
+.credit-card-expenses-page {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0 1rem 1rem;
+}
+
+.credit-card-expenses-page > .page-header-bar {
+  flex-shrink: 0;
+}
+
+.credit-card-expenses-card {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.credit-card-expenses-grid {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.credit-card-expenses-grid-header {
+  flex-shrink: 0;
+  padding: 0 1rem;
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.credit-card-expenses-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 1rem;
+}
+
+.credit-card-expenses-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.credit-card-expenses-table--header th {
+  border-bottom: none;
+}
+
+.credit-card-expenses-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 0 0 1rem 1rem;
+}
+
+.credit-card-expenses-legend {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.credit-card-expenses-loading {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.credit-card-expenses-error {
+  flex-shrink: 0;
+  margin: 1rem 1rem 0;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}

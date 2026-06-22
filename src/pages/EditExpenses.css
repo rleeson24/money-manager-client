@@ -1,9 +1,72 @@
 /* =========================
+   Page layout
+   ========================= */
+
+.edit-expenses-page {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0 1rem 1rem;
+}
+
+.edit-expenses-page > .page-header-bar {
+  flex-shrink: 0;
+}
+
+.edit-expenses-card {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-expenses-toolbar {
+  flex-shrink: 0;
+  padding: 1rem 1rem 0.75rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 1rem 1rem 0 0;
+}
+
+.edit-expenses-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.edit-expenses-grid {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.edit-expenses-grid-header {
+  flex-shrink: 0;
+  padding: 0 1rem;
+  background: #fafafa;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.edit-expenses-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 1rem 1rem;
+}
+
+/* =========================
    Base Table Styling
    ========================= */
 
 .expenses-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
@@ -14,10 +77,11 @@
   font-weight: 600;
   background-color: #fafafa;
   border-bottom: 2px solid #e5e7eb;
-  position: sticky;
-  top: 0;
-  z-index: 10;
   user-select: none;
+}
+
+.expenses-table--header th {
+  border-bottom: none;
 }
 
 .expenses-table th.cursor-pointer {

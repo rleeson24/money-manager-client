@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactSelect, { SingleValue } from "react-select";
 import {
   Card,
-  CardContent,
   Input,
   Button,
   Dialog,
@@ -216,6 +215,23 @@ export default function EditExpenses() {
     const maxLen = Math.max(...labels.map((l) => l.length));
     return Math.min(320, 24 + maxLen * 8);
   }, [categoryOptions]);
+
+  const expenseTableColGroup = useMemo(
+    () => (
+      <colgroup>
+        <col style={{ width: 40 }} />
+        <col style={{ width: 128 }} />
+        <col />
+        <col style={{ width: 112 }} />
+        <col style={{ width: paymentMethodSelectWidth + 10 }} />
+        <col style={{ width: categorySelectWidth + 10 }} />
+        <col style={{ width: 48 }} />
+        <col style={{ width: 32 }} />
+        <col style={{ width: 128 }} />
+      </colgroup>
+    ),
+    [paymentMethodSelectWidth, categorySelectWidth]
+  );
 
   // Draft row for "add new" - saved after user stops editing (debounced)
   const today = () => todayUtcExpenseDate();
@@ -766,7 +782,7 @@ export default function EditExpenses() {
   }
 
   return (
-    <div className="w-full min-w-0">
+    <div className="edit-expenses-page w-full min-w-0">
       <PageHeader title="Edit Expenses - USD">
         <Input
           type="month"
@@ -776,107 +792,115 @@ export default function EditExpenses() {
         />
       </PageHeader>
 
-      <Card className="m-4">
-        <CardContent className="overflow-auto">
-          {error && <div className="error-message mb-4">{error}</div>}
+      <Card className="edit-expenses-card min-w-0">
+        <div className="edit-expenses-toolbar">
+          {error && <div className="error-message mb-2">{error}</div>}
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Input
-            type="search"
-            placeholder="Search expenses..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="min-w-[200px] max-w-xs"
-          />
-          <Button
-            onClick={handleBulkUpdate}
-            disabled={selectedExpenses.size === 0}
-            variant="primary"
-          >
-            Bulk Updates ({selectedExpenses.size})
-          </Button>
-          <Button
-            onClick={handleBulkDelete}
-            disabled={selectedExpenses.size === 0}
-            variant="ghost"
-          >
-            Delete ({selectedExpenses.size})
-          </Button>
-          {selectedExpenses.size > 0 && (
-            <div className="flex items-center gap-3 ml-2">
-              <span className="text-sm text-gray-600">
-                {selectedExpenses.size} expense
-                {selectedExpenses.size !== 1 ? "s" : ""} selected
+          <div className="edit-expenses-toolbar__actions">
+            <Input
+              type="search"
+              placeholder="Search expenses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="min-w-[200px] max-w-xs"
+            />
+            <Button
+              onClick={handleBulkUpdate}
+              disabled={selectedExpenses.size === 0}
+              variant="primary"
+            >
+              Bulk Updates ({selectedExpenses.size})
+            </Button>
+            <Button
+              onClick={handleBulkDelete}
+              disabled={selectedExpenses.size === 0}
+              variant="ghost"
+            >
+              Delete ({selectedExpenses.size})
+            </Button>
+            {selectedExpenses.size > 0 && (
+              <div className="flex items-center gap-3 ml-2">
+                <span className="text-sm text-gray-600">
+                  {selectedExpenses.size} expense
+                  {selectedExpenses.size !== 1 ? "s" : ""} selected
+                </span>
+                <span className="text-sm font-semibold text-blue-600">
+                  Total: ${getSelectedSum().toFixed(2)}
+                </span>
+              </div>
+            )}
+            {debouncedSearchTerm && (
+              <span className="text-xs text-gray-500">
+                (search: &quot;{debouncedSearchTerm}&quot;)
               </span>
-              <span className="text-sm font-semibold text-blue-600">
-                Total: ${getSelectedSum().toFixed(2)}
-              </span>
-            </div>
-          )}
-          {debouncedSearchTerm && (
-            <span className="text-xs text-gray-500">
-              (search: &quot;{debouncedSearchTerm}&quot;)
-            </span>
-          )}
+            )}
+          </div>
         </div>
 
-        <table ref={expensesTableRef} className="expenses-table w-full text-sm">
-          <thead className="sticky top-0 bg-background border-b">
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  checked={
-                    selectedExpenses.size === expenses.length &&
-                    expenses.length > 0
-                  }
-                  onChange={handleSelectAll}
-                  className="cursor-pointer"
-                />
-              </th>
-              <th
-                className="cursor-pointer hover:bg-gray-100 select-none w-32"
-                onClick={() => handleSort("date")}
-              >
-                Date {getSortIcon("date")}
-              </th>
-              <th
-                className="cursor-pointer hover:bg-gray-100 select-none"
-                onClick={() => handleSort("description")}
-              >
-                Expense {getSortIcon("description")}
-              </th>
-              <th
-                className="cursor-pointer hover:bg-gray-100 select-none w-28 text-right"
-                onClick={() => handleSort("amount")}
-              >
-                Amount {getSortIcon("amount")}
-              </th>
-              <th
-                className="cursor-pointer hover:bg-gray-100 select-none"
-                style={{ width: paymentMethodSelectWidth + 10, minWidth: paymentMethodSelectWidth + 10 }}
-                onClick={() => handleSort("paymentMethod")}
-              >
-                Method {getSortIcon("paymentMethod")}
-              </th>
-              <th
-                className="cursor-pointer hover:bg-gray-100 select-none"
-                style={{ width: categorySelectWidth + 10, minWidth: categorySelectWidth + 10 }}
-                onClick={() => handleSort("category")}
-              >
-                Category {getSortIcon("category")}
-              </th>
-              <th className="w-12 text-center" style={{ width: 48 }}>Split</th>
-              <th className="w-8 px-1" aria-label="Expand splits" />
-              <th
-                className="cursor-pointer hover:bg-gray-100 select-none w-32"
-                onClick={() => handleSort("datePaid")}
-              >
-                Date Paid {getSortIcon("datePaid")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className="edit-expenses-grid">
+          <div className="edit-expenses-grid-header">
+            <table className="expenses-table expenses-table--header w-full text-sm">
+              {expenseTableColGroup}
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedExpenses.size === expenses.length &&
+                        expenses.length > 0
+                      }
+                      onChange={handleSelectAll}
+                      className="cursor-pointer"
+                    />
+                  </th>
+                  <th
+                    className="cursor-pointer hover:bg-gray-100 select-none w-32"
+                    onClick={() => handleSort("date")}
+                  >
+                    Date {getSortIcon("date")}
+                  </th>
+                  <th
+                    className="cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort("description")}
+                  >
+                    Expense {getSortIcon("description")}
+                  </th>
+                  <th
+                    className="cursor-pointer hover:bg-gray-100 select-none w-28 text-right"
+                    onClick={() => handleSort("amount")}
+                  >
+                    Amount {getSortIcon("amount")}
+                  </th>
+                  <th
+                    className="cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort("paymentMethod")}
+                  >
+                    Method {getSortIcon("paymentMethod")}
+                  </th>
+                  <th
+                    className="cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort("category")}
+                  >
+                    Category {getSortIcon("category")}
+                  </th>
+                  <th className="w-12 text-center">Split</th>
+                  <th className="w-8 px-1" aria-label="Expand splits" />
+                  <th
+                    className="cursor-pointer hover:bg-gray-100 select-none w-32"
+                    onClick={() => handleSort("datePaid")}
+                  >
+                    Date Paid {getSortIcon("datePaid")}
+                  </th>
+                </tr>
+              </thead>
+            </table>
+          </div>
+
+          <div className="edit-expenses-table-scroll">
+            <table ref={expensesTableRef} className="expenses-table expenses-table--body w-full text-sm">
+              {expenseTableColGroup}
+              <tbody>
             {getSortedExpenses().map((exp, r) => {
               const id = expIdNum(exp);
               return (
@@ -1260,12 +1284,13 @@ export default function EditExpenses() {
               <td className="w-32" />
             </tr>
           </tbody>
-        </table>
+            </table>
 
-        <p className="text-xs text-muted-foreground mt-2">
-          ⚠ Unsaved · ❌ Error · Ctrl+Z Undo · Ctrl+Alt+D: new expense date · Bottom row: new expense (saves when you enter date, description, or amount)
-        </p>
-      </CardContent>
+            <p className="expenses-legend">
+              ⚠ Unsaved · ❌ Error · Ctrl+Z Undo · Ctrl+Alt+D: new expense date · Bottom row: new expense (saves when you enter date, description, or amount)
+            </p>
+          </div>
+        </div>
 
       {/* Bulk Update Dialog */}
       <Dialog open={bulkUpdateDialogOpen}>
