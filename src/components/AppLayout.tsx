@@ -6,6 +6,7 @@
 
 import { Outlet } from "react-router-dom";
 import SiteHeader from "./SiteHeader";
+import SiteFooter from "./SiteFooter";
 import "../App.css";
 
 function AppLayout() {
@@ -15,6 +16,7 @@ function AppLayout() {
       <main className="app-layout__main">
         <Outlet />
       </main>
+      <SiteFooter />
     </div>
   );
 }

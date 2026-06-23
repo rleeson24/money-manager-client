@@ -17,7 +17,7 @@
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-app-gradient);
   overflow: hidden;
 }
 
@@ -35,13 +35,13 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  color: white;
+  color: var(--color-on-accent);
 }
 
 .App-header {
   /* Styles for the header section */
   padding: 2rem;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--color-glass-section);
   backdrop-filter: blur(10px);
 }
 
@@ -62,12 +62,12 @@
 
 section {
   /* Styles for each section */
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-glass-section);
   backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 2rem;
   margin: 1.5rem 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-glass);
 }
 
 h2 {
@@ -87,14 +87,14 @@ h2 {
 
 .counter strong {
   font-size: 1.5rem;
-  color: #ffd700;
+  color: var(--color-accent-gold);
 }
 
 /* Button styles */
 button {
-  background-color: #4CAF50;
+  background-color: var(--color-submit-button);
   border: none;
-  color: white;
+  color: var(--color-on-accent);
   padding: 12px 24px;
   margin: 8px;
   font-size: 16px;
@@ -104,7 +104,7 @@ button {
 }
 
 button:hover {
-  background-color: #45a049;
+  background-color: var(--color-submit-button-hover);
 }
 
 button:active {

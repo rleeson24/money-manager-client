@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-app-gradient);
 }
 
 .login-page__card {
@@ -12,12 +12,12 @@
   max-width: 420px;
   padding: 2.5rem;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--color-glass-bg);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-glass-border);
+  box-shadow: var(--shadow-glass);
   text-align: center;
-  color: white;
+  color: var(--color-on-accent);
 }
 
 .login-page__title {
@@ -28,7 +28,7 @@
 .login-page__subtitle {
   margin: 0 0 2rem;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-on-accent-muted);
 }
 
 .login-page__button {
@@ -36,8 +36,8 @@
   padding: 0.875rem 1.25rem;
   border: none;
   border-radius: 6px;
-  background-color: #0078d4;
-  color: white;
+  background-color: var(--color-sign-in);
+  color: var(--color-on-accent);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -45,5 +45,5 @@
 }
 
 .login-page__button:hover {
-  background-color: #106ebe;
+  background-color: var(--color-sign-in-hover);
 }

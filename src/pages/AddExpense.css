@@ -10,18 +10,18 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--color-border-light);
 }
 
 .page-header h1 {
   margin: 0;
-  color: #333;
+  color: var(--color-text-heading);
 }
 
 .back-button {
   padding: 0.5rem 1rem;
-  background-color: #6c757d;
-  color: white;
+  background-color: var(--color-secondary);
+  color: var(--color-on-accent);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -30,16 +30,16 @@
 }
 
 .back-button:hover {
-  background-color: #5a6268;
+  background-color: var(--color-secondary-hover);
 }
 
 .error-message {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: var(--color-error-bg-alt);
+  color: var(--color-error-text-alt);
   padding: 1rem;
   border-radius: 4px;
   margin-bottom: 1rem;
-  border: 1px solid #f5c6cb;
+  border: 1px solid var(--color-error-border-alt);
 }
 
 .expenses-container {
@@ -56,16 +56,16 @@
 
 /* Form Styles */
 .expense-form-section {
-  background: white;
+  background: var(--color-surface);
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-card);
 }
 
 .expense-form-section h2 {
   margin-top: 0;
   margin-bottom: 1.5rem;
-  color: #333;
+  color: var(--color-text-heading);
 }
 
 .expense-form {
@@ -82,19 +82,19 @@
 
 .form-group label {
   font-weight: 600;
-  color: #555;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
 }
 
 .required {
-  color: #dc3545;
+  color: var(--color-text-negative);
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-input-alt);
   border-radius: 4px;
   font-size: 1rem;
   font-family: inherit;
@@ -105,8 +105,8 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
 }
 
 .form-group textarea {
@@ -119,7 +119,7 @@
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  color: #555;
+  color: var(--color-text-muted);
   cursor: pointer;
 }
 
@@ -147,35 +147,35 @@
 }
 
 .submit-button {
-  background-color: #007bff;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-on-accent);
   flex: 1;
 }
 
 .submit-button:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: var(--color-primary-hover);
 }
 
 .submit-button:disabled {
-  background-color: #6c757d;
+  background-color: var(--color-secondary);
   cursor: not-allowed;
 }
 
 .cancel-button {
-  background-color: #6c757d;
-  color: white;
+  background-color: var(--color-secondary);
+  color: var(--color-on-accent);
 }
 
 .cancel-button:hover {
-  background-color: #5a6268;
+  background-color: var(--color-secondary-hover);
 }
 
 /* Expenses List Styles */
 .expenses-list-section {
-  background: white;
+  background: var(--color-surface);
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-card);
 }
 
 .section-header {
@@ -187,13 +187,13 @@
 
 .section-header h2 {
   margin: 0;
-  color: #333;
+  color: var(--color-text-heading);
 }
 
 .add-button {
   padding: 0.5rem 1rem;
-  background-color: #28a745;
-  color: white;
+  background-color: var(--color-success);
+  color: var(--color-on-accent);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -203,14 +203,14 @@
 }
 
 .add-button:hover {
-  background-color: #218838;
+  background-color: var(--color-success-hover);
 }
 
 .loading,
 .empty-state {
   text-align: center;
   padding: 2rem;
-  color: #6c757d;
+  color: var(--color-text-placeholder);
 }
 
 .expenses-list {
@@ -224,13 +224,13 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 1.5rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-border-light);
   border-radius: 8px;
   transition: box-shadow 0.2s;
 }
 
 .expense-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .expense-info {
@@ -239,7 +239,7 @@
 
 .expense-info h3 {
   margin: 0 0 0.5rem 0;
-  color: #333;
+  color: var(--color-text-heading);
   font-size: 1.1rem;
 }
 
@@ -252,26 +252,26 @@
 
 .expense-amount {
   font-weight: 700;
-  color: #dc3545;
+  color: var(--color-text-negative);
   font-size: 1.1rem;
 }
 
 .expense-category {
-  background-color: #e9ecef;
+  background-color: var(--color-surface-badge);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.85rem;
-  color: #495057;
+  color: var(--color-text-category);
 }
 
 .expense-date {
-  color: #6c757d;
+  color: var(--color-text-placeholder);
   font-size: 0.9rem;
 }
 
 .expense-notes {
   margin: 0.5rem 0 0 0;
-  color: #6c757d;
+  color: var(--color-text-placeholder);
   font-size: 0.9rem;
   font-style: italic;
 }
@@ -292,19 +292,19 @@
 }
 
 .edit-button {
-  background-color: #ffc107;
+  background-color: var(--color-warning);
   color: #000;
 }
 
 .edit-button:hover {
-  background-color: #e0a800;
+  background-color: var(--color-warning-hover);
 }
 
 .delete-button {
-  background-color: #dc3545;
-  color: white;
+  background-color: var(--color-danger);
+  color: var(--color-on-accent);
 }
 
 .delete-button:hover {
-  background-color: #c82333;
+  background-color: var(--color-danger-hover);
 }

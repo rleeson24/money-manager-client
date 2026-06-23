@@ -30,8 +30,8 @@
 .credit-card-expenses-grid-header {
   flex-shrink: 0;
   padding: 0 1rem;
-  background: #f9fafb;
-  border-bottom: 2px solid #e5e7eb;
+  background: var(--color-surface-subtle);
+  border-bottom: 2px solid var(--color-border);
 }
 
 .credit-card-expenses-table-scroll {
@@ -59,14 +59,14 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  border-top: 1px solid #e5e7eb;
-  background: white;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
   border-radius: 0 0 1rem 1rem;
 }
 
 .credit-card-expenses-legend {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--color-text-subtle);
   margin-top: 0.5rem;
 }
 
@@ -83,8 +83,8 @@
   flex-shrink: 0;
   margin: 1rem 1rem 0;
   padding: 0.75rem 1rem;
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--color-error-bg);
+  color: var(--color-error-text-strong);
   border-radius: 0.5rem;
   font-size: 0.875rem;
 }

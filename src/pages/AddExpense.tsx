@@ -275,13 +275,6 @@ function AddExpense() {
     setAmountStr("");
   }
 
-  /**
-   * Start adding a new expense
-   */
-  const handleAddNew = () => {
-    resetForm();
-  };
-
   const paymentMethodOptions = useMemo(
     () => [
       { value: "", label: "— None —" },
@@ -449,9 +442,6 @@ function AddExpense() {
         <section className="expenses-list-section">
           <div className="section-header">
             <h2>All Expenses</h2>
-            <button onClick={handleAddNew} className="add-button">
-              + Add New Expense
-            </button>
           </div>
 
           {expenses.length === 0 ? (

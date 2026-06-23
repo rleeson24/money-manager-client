@@ -11,7 +11,7 @@ export interface CardProps {
 export function Card({ children, className = "" }: CardProps) {
   return (
     <div
-      className={`rounded-2xl border border-gray-200 bg-white shadow-sm ${className}`}
+      className={`rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-600 dark:bg-slate-800 ${className}`}
     >
       {children}
     </div>
@@ -41,9 +41,9 @@ export function Button({
   const base = "min-h-[32px] h-8 px-3 py-1.5 rounded-lg text-sm font-medium transition inline-flex items-center justify-center box-border";
   const styles: Record<ButtonVariant, string> = {
     primary: "bg-blue-600 text-white hover:bg-blue-700",
-    secondary: "bg-gray-100 hover:bg-gray-200",
-    outline: "border border-gray-300 hover:bg-gray-100",
-    ghost: "text-gray-500 hover:text-red-600",
+    secondary: "bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-100",
+    outline: "border border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-slate-700 dark:text-slate-100",
+    ghost: "text-gray-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400",
   };
 
   return (
@@ -67,7 +67,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <input
       ref={ref}
       {...props}
-      className={`h-8 min-h-8 w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 box-border ${className}`}
+      className={`h-8 min-h-8 w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 box-border dark:border-gray-600 dark:bg-slate-900 dark:text-slate-100 ${className}`}
     />
   );
 });
@@ -88,7 +88,7 @@ export function Select({ value, onValueChange, children, disabled }: SelectProps
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
       disabled={disabled}
-      className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:pointer-events-none"
+      className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:pointer-events-none dark:border-gray-600 dark:bg-slate-900 dark:text-slate-100"
     >
       {children}
     </select>
@@ -140,7 +140,7 @@ export function DialogContent({ children, className = "" }: CardProps) {
   const widthClass = className.includes("max-w-") ? "" : "max-w-lg";
   return (
     <div
-      className={`bg-white rounded-xl shadow-2xl p-6 w-full ${widthClass} max-h-[90vh] overflow-y-auto mx-4 ${className}`}
+      className={`bg-white rounded-xl shadow-2xl p-6 w-full dark:bg-slate-800 dark:text-slate-100 ${widthClass} max-h-[90vh] overflow-y-auto mx-4 ${className}`}
       style={{ position: 'relative', zIndex: 10000 }}
       onClick={(e) => e.stopPropagation()}
     >

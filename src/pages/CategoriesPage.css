@@ -10,13 +10,13 @@
 
 .categories-page__add .categories-page__subtitle {
   margin: 0 0 1rem;
-  color: #555;
+  color: var(--color-text-muted);
 }
 
 .categories-page__error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #b91c1c;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error-text);
   padding: 0.75rem 1rem;
   border-radius: 6px;
   margin-bottom: 1rem;
@@ -25,9 +25,9 @@
 .categories-page__add {
   margin-bottom: 1.5rem;
   padding: 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #fafafa;
+  background: var(--color-surface-raised);
 }
 
 .categories-page__add h2 {
@@ -45,16 +45,16 @@
 .categories-page__add-form input[type="text"] {
   min-width: 200px;
   padding: 0.4rem 0.6rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-input);
   border-radius: 6px;
 }
 
 .categories-page__add-form button {
   padding: 0.45rem 1rem;
   border-radius: 6px;
-  border: 1px solid #2563eb;
-  background: #2563eb;
-  color: #fff;
+  border: 1px solid var(--color-primary-blue);
+  background: var(--color-primary-blue);
+  color: var(--color-on-accent);
   cursor: pointer;
 }
 
@@ -76,7 +76,7 @@
 
 .categories-page__table-wrap {
   overflow-x: auto;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
 }
 
@@ -89,13 +89,13 @@
 .categories-page__table th,
 .categories-page__table td {
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
   vertical-align: middle;
 }
 
 .categories-page__table th {
-  background: #f3f4f6;
+  background: var(--color-surface-muted);
   font-weight: 600;
 }
 
@@ -114,8 +114,8 @@
 
 .categories-page__name-input:hover,
 .categories-page__name-input:focus {
-  border-color: #d1d5db;
-  background: #fff;
+  border-color: var(--color-border-input);
+  background: var(--color-surface-input);
 }
 
 .categories-page__name-input--child {
@@ -125,13 +125,13 @@
 .categories-page__delete {
   padding: 0.25rem 0.5rem;
   font-size: 0.8rem;
-  border: 1px solid #fca5a5;
-  background: #fff;
-  color: #b91c1c;
+  border: 1px solid var(--color-border-delete);
+  background: var(--color-surface);
+  color: var(--color-error-text);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .categories-page__delete:hover {
-  background: #fef2f2;
+  background: var(--color-delete-hover-bg);
 }

@@ -12,6 +12,9 @@
  */
 
 @import "tailwindcss";
+@import "./theme/themes.css";
+
+@variant dark (&:where(.dark, .dark *));
 
 /* Custom base styles */
 @layer base {
@@ -29,6 +32,15 @@
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    color: var(--color-text);
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    background-color: var(--color-surface-input);
+    color: var(--color-text);
+    border-color: var(--color-border-input);
   }
 
   html,

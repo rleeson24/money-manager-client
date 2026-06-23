@@ -183,7 +183,7 @@ export default function ImportPage() {
                           onChange={(e) =>
                             handlePaymentMethodChange(section.id, Number(e.target.value))
                           }
-                          className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:pointer-events-none"
+                          className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:pointer-events-none dark:border-gray-600 dark:bg-slate-900 dark:text-slate-100"
                         >
                           {paymentMethods.map((pm) => (
                             <option key={pm.id} value={pm.id}>

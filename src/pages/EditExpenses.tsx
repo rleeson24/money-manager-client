@@ -820,7 +820,7 @@ export default function EditExpenses() {
             </Button>
             {selectedExpenses.size > 0 && (
               <div className="flex items-center gap-3 ml-2">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-slate-300">
                   {selectedExpenses.size} expense
                   {selectedExpenses.size !== 1 ? "s" : ""} selected
                 </span>
@@ -830,7 +830,7 @@ export default function EditExpenses() {
               </div>
             )}
             {debouncedSearchTerm && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 dark:text-slate-400">
                 (search: &quot;{debouncedSearchTerm}&quot;)
               </span>
             )}
@@ -855,31 +855,31 @@ export default function EditExpenses() {
                     />
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none w-32"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 select-none w-32"
                     onClick={() => handleSort("date")}
                   >
                     Date {getSortIcon("date")}
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 select-none"
                     onClick={() => handleSort("description")}
                   >
                     Expense {getSortIcon("description")}
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none w-28 text-right"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 select-none w-28 text-right"
                     onClick={() => handleSort("amount")}
                   >
                     Amount {getSortIcon("amount")}
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 select-none"
                     onClick={() => handleSort("paymentMethod")}
                   >
                     Method {getSortIcon("paymentMethod")}
                   </th>
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 select-none"
                     onClick={() => handleSort("category")}
                   >
                     Category {getSortIcon("category")}
@@ -887,7 +887,7 @@ export default function EditExpenses() {
                   <th className="w-12 text-center">Split</th>
                   <th className="w-8 px-1" aria-label="Expand splits" />
                   <th
-                    className="cursor-pointer hover:bg-gray-100 select-none w-32"
+                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 select-none w-32"
                     onClick={() => handleSort("datePaid")}
                   >
                     Date Paid {getSortIcon("datePaid")}
@@ -1119,7 +1119,7 @@ export default function EditExpenses() {
                           });
                         }
                       }}
-                      className="text-gray-500 hover:text-gray-800 cursor-pointer select-none inline-block"
+                      className="text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer select-none inline-block"
                       aria-label={expandedSplits.has(id) ? "Collapse split" : "Expand split"}
                     >
                       {expandedSplits.has(id) ? "▲" : "▼"}
@@ -1162,7 +1162,7 @@ export default function EditExpenses() {
             {/* Draft row */}
             <tr
               ref={draftRowRef}
-              className="border-b border-dashed bg-gray-50/70"
+              className="border-b border-dashed bg-gray-50/70 dark:bg-slate-800/70 dark:border-gray-600"
               aria-label="New expense row"
             >
               <td className="align-middle" />
@@ -1174,7 +1174,7 @@ export default function EditExpenses() {
                   value={utcToLocalDateInput(draftNewRow.date)}
                   onChange={(e) => updateDraft("date", localDateInputToUtc(e.target.value))}
                   onFocus={(e) => e.target.select()}
-                  className="bg-white/80 placeholder:italic"
+                  className="bg-white/80 dark:bg-slate-900/80 placeholder:italic"
                   disabled={isSavingDraft}
                 />
                 </div>
@@ -1185,7 +1185,7 @@ export default function EditExpenses() {
                   placeholder="Add new expense..."
                   value={draftNewRow.description}
                   onChange={(e) => updateDraft("description", e.target.value)}
-                  className="bg-white/80 placeholder:italic placeholder:text-gray-400"
+                  className="bg-white/80 dark:bg-slate-900/80 placeholder:italic placeholder:text-gray-400 dark:placeholder:text-slate-500"
                   disabled={isSavingDraft}
                 />
                 </div>
@@ -1202,7 +1202,7 @@ export default function EditExpenses() {
                     updateDraft("amount", formatAmountForBlur(draftNewRow.amount));
                   }}
                   placeholder="0.00"
-                  className="text-right bg-white/80 placeholder:italic placeholder:text-gray-400"
+                  className="text-right bg-white/80 dark:bg-slate-900/80 placeholder:italic placeholder:text-gray-400 dark:placeholder:text-slate-500"
                   disabled={isSavingDraft}
                 />
                 </div>
@@ -1299,7 +1299,7 @@ export default function EditExpenses() {
             <DialogTitle>Bulk Update Expenses</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-slate-300">
               Update {selectedExpenses.size} selected expense
               {selectedExpenses.size !== 1 ? "s" : ""}. Leave fields empty to
               keep current values.
@@ -1436,7 +1436,7 @@ export default function EditExpenses() {
             <DialogTitle>Confirm Delete</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-slate-300">
               Are you sure you want to delete{" "}
               <strong>{selectedExpenses.size}</strong> expense
               {selectedExpenses.size !== 1 ? "s" : ""}? This action cannot be

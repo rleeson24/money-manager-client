@@ -205,7 +205,7 @@ export function ExpenseSplitDialog({
           <div className="border rounded-lg">
             <table className="text-sm w-full">
               <thead>
-                <tr className="bg-gray-100 border-b">
+                <tr className="bg-gray-100 border-b dark:bg-slate-700 dark:border-gray-600">
                   <th className="text-left p-2 font-medium">Description</th>
                   <th className="text-right p-2 w-28 font-medium">Amount</th>
                   <th className="text-left p-2 w-48 font-medium">Category</th>
@@ -221,7 +221,7 @@ export function ExpenseSplitDialog({
                         onChange={(e) => updateRow(idx, "description", e.target.value)}
                         onBlur={() => checkRowCompletion(idx)}
                         placeholder="Description"
-                        className="border-gray-200"
+                        className="border-gray-200 dark:border-gray-600"
                       />
                     </td>
                     <td className="p-1 text-right">
@@ -239,7 +239,7 @@ export function ExpenseSplitDialog({
                             return appendDraftRowIfNeeded(updated, idx, parentAmount, defaultCategoryId);
                           });
                         }}
-                        className="w-24 text-right border-gray-200"
+                        className="w-24 text-right border-gray-200 dark:border-gray-600"
                       />
                     </td>
                     <td className="p-1">

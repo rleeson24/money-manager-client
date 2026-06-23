@@ -129,11 +129,11 @@ export function ExpenseSplitSection({
     }
   }
 
-  if (loading) return <div className="p-2 text-sm text-gray-500">Loading splits...</div>;
+  if (loading) return <div className="p-2 text-sm text-gray-500 dark:text-slate-400">Loading splits...</div>;
   if (error) return <div className="p-2 text-sm text-red-600">{error}</div>;
 
   return (
-    <div className="border-t border-gray-200 bg-gray-50/60 p-3">
+    <div className="border-t border-gray-200 bg-gray-50/60 dark:border-gray-600 dark:bg-slate-800/60 p-3">
       <div className="flex items-center justify-end mb-2">
         <span className="text-sm font-semibold">
           Sum: ${sum.toFixed(2)} / Remaining: ${remaining.toFixed(2)}

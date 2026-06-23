@@ -1,5 +1,5 @@
 .navigation-section {
-  background: #f8f9fa;
+  background: var(--color-surface-nav);
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 2rem;
@@ -14,8 +14,8 @@
 .nav-link {
   display: inline-block;
   padding: 0.75rem 1.5rem;
-  background-color: #007bff;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-on-accent);
   text-decoration: none;
   border-radius: 4px;
   font-weight: 600;
@@ -23,5 +23,5 @@
 }
 
 .nav-link:hover {
-  background-color: #0056b3;
+  background-color: var(--color-primary-hover);
 }

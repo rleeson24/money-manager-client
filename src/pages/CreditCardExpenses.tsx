@@ -370,31 +370,31 @@ export default function CreditCardExpenses() {
                       <span className="text-xs">Excl</span>
                     </th>
                     <th
-                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-32 transition-colors"
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 dark:hover:bg-slate-600/80 select-none w-32 transition-colors"
                       onClick={() => handleSort("date")}
                     >
                       Date {getSortIcon("date")}
                     </th>
                     <th
-                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none transition-colors"
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 dark:hover:bg-slate-600/80 select-none transition-colors"
                       onClick={() => handleSort("description")}
                     >
                       Expense {getSortIcon("description")}
                     </th>
                     <th
-                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-28 transition-colors"
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 dark:hover:bg-slate-600/80 select-none w-28 transition-colors"
                       onClick={() => handleSort("amount")}
                     >
                       Amount {getSortIcon("amount")}
                     </th>
                     <th
-                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none transition-colors"
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 dark:hover:bg-slate-600/80 select-none transition-colors"
                       onClick={() => handleSort("category")}
                     >
                       Category {getSortIcon("category")}
                     </th>
                     <th
-                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 select-none w-32 transition-colors"
+                      className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 dark:hover:bg-slate-600/80 select-none w-32 transition-colors"
                       onClick={() => handleSort("datePaid")}
                     >
                       Date Paid {getSortIcon("datePaid")}
@@ -411,8 +411,8 @@ export default function CreditCardExpenses() {
                 {getSortedExpenses().map((exp, r) => {
                   const id = expIdNum(exp);
                   return (
-                  <tr key={id} className="border-b border-gray-200 even:bg-gray-50/50 hover:bg-slate-50">
-                    <td className="w-10 p-1.5 text-center align-middle border-b border-gray-200">
+                  <tr key={id} className="border-b border-gray-200 dark:border-gray-600 dark:border-gray-600 even:bg-gray-50/50 hover:bg-slate-50 dark:even:bg-slate-800/50 dark:hover:bg-slate-700/50">
+                    <td className="w-10 p-1.5 text-center align-middle border-b border-gray-200 dark:border-gray-600">
                       <div className="flex items-center justify-center gap-1">
                         <input
                           type="checkbox"
@@ -425,7 +425,7 @@ export default function CreditCardExpenses() {
                         {cellBadge(id, "excludeFromCredit")}
                       </div>
                     </td>
-                    <td className="w-32 p-1.5 align-middle border-b border-gray-200">
+                    <td className="w-32 p-1.5 align-middle border-b border-gray-200 dark:border-gray-600">
                       <div className="flex items-center gap-1 w-full [&_input]:w-full [&_input]:focus:outline-2 [&_input]:focus:outline-blue-500 [&_input]:focus:outline-offset-[-1px] [&_input]:focus:bg-blue-50/50 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-inset">
                         <Input
                           data-cell={`${r}-0`}
@@ -438,7 +438,7 @@ export default function CreditCardExpenses() {
                         {cellBadge(id, "date")}
                       </div>
                     </td>
-                    <td className="p-1.5 align-middle border-b border-gray-200">
+                    <td className="p-1.5 align-middle border-b border-gray-200 dark:border-gray-600">
                       <div className="flex items-center gap-1 w-full [&_input]:w-full [&_input]:focus:outline-2 [&_input]:focus:outline-blue-500 [&_input]:focus:outline-offset-[-1px] [&_input]:focus:bg-blue-50/50 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-inset">
                         <Input
                           data-cell={`${r}-1`}
@@ -450,7 +450,7 @@ export default function CreditCardExpenses() {
                         {cellBadge(id, "description")}
                       </div>
                     </td>
-                    <td className="w-28 p-1.5 align-middle border-b border-gray-200">
+                    <td className="w-28 p-1.5 align-middle border-b border-gray-200 dark:border-gray-600">
                       <div className="flex items-center gap-1 w-full [&_input]:w-full [&_input]:focus:outline-2 [&_input]:focus:outline-blue-500 [&_input]:focus:outline-offset-[-1px] [&_input]:focus:bg-blue-50/50 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-inset">
                         <Input
                           data-cell={`${r}-2`}
@@ -498,8 +498,8 @@ export default function CreditCardExpenses() {
                         {cellBadge(id, "amount")}
                       </div>
                     </td>
-                    <td className="p-1.5 align-middle border-b border-gray-200">
-                      <div className="flex items-center gap-1 w-full [&_[role=combobox]]:w-full [&_[role=combobox]]:focus-within:outline-2 [&_[role=combobox]]:focus-within:outline-blue-500 rounded [&_[role=combobox]]:bg-white/75">
+                    <td className="p-1.5 align-middle border-b border-gray-200 dark:border-gray-600">
+                      <div className="flex items-center gap-1 w-full [&_[role=combobox]]:w-full [&_[role=combobox]]:focus-within:outline-2 [&_[role=combobox]]:focus-within:outline-blue-500 rounded [&_[role=combobox]]:bg-white/75 dark:[&_[role=combobox]]:bg-slate-900/75">
                         <ReactSelect
                           classNamePrefix="cat-select"
                           isSearchable
@@ -534,7 +534,7 @@ export default function CreditCardExpenses() {
                         {cellBadge(id, "category")}
                       </div>
                     </td>
-                    <td className="w-32 p-1.5 align-middle border-b border-gray-200">
+                    <td className="w-32 p-1.5 align-middle border-b border-gray-200 dark:border-gray-600">
                       <div className="flex items-center gap-1 w-full [&_input]:w-full [&_input]:focus:outline-2 [&_input]:focus:outline-blue-500 [&_input]:focus:outline-offset-[-1px] [&_input]:focus:bg-blue-50/50 rounded focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-inset">
                         <Input
                           data-cell={`${r}-5`}

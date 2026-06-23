@@ -60,11 +60,11 @@ export function ExpenseSplitReadonlyGrid({
 
   const sum = splits.reduce((s, sp) => s + (sp.amount ?? 0), 0);
 
-  if (loading) return <div className="p-3 text-sm text-gray-500">Loading splits…</div>;
+  if (loading) return <div className="p-3 text-sm text-gray-500 dark:text-slate-400">Loading splits…</div>;
   if (error) return <div className="p-3 text-sm text-red-600">{error}</div>;
 
   return (
-    <div className="border-t border-gray-200 bg-gray-50/60 p-3">
+    <div className="border-t border-gray-200 bg-gray-50/60 dark:border-gray-600 dark:bg-slate-800/60 p-3">
       <div className="flex items-center justify-between gap-2 mb-2">
         <span className="text-sm font-medium">
           Sum: ${sum.toFixed(2)} / Total: ${parentAmount.toFixed(2)}
@@ -72,16 +72,16 @@ export function ExpenseSplitReadonlyGrid({
         <button
           type="button"
           onClick={() => onEditClick(splits)}
-          className="shrink-0 p-1 rounded border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="shrink-0 p-1 rounded border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 dark:border-gray-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Edit splits"
         >
           <PencilIcon className="w-4 h-4" />
         </button>
       </div>
-      <div className="w-full md:w-fit max-w-full overflow-x-auto border rounded overflow-hidden bg-white">
+      <div className="w-full md:w-fit max-w-full overflow-x-auto border rounded overflow-hidden bg-white dark:bg-slate-800 dark:border-gray-600">
         <table className="text-sm table-auto min-w-0">
           <thead>
-            <tr className="bg-gray-100 border-b">
+            <tr className="bg-gray-100 border-b dark:bg-slate-700 dark:border-gray-600">
               <th className="text-left p-2 font-medium min-w-[20rem]">Description</th>
               <th className="text-right p-2 w-28 font-medium">Amount</th>
               <th className="text-left p-2 min-w-[8rem] font-medium">Category</th>
@@ -90,7 +90,7 @@ export function ExpenseSplitReadonlyGrid({
           <tbody>
             {splits.length === 0 ? (
               <tr>
-                <td colSpan={3} className="p-3 text-gray-500 italic">
+                <td colSpan={3} className="p-3 text-gray-500 dark:text-slate-400 italic">
                   No split lines. Click Edit to add.
                 </td>
               </tr>
