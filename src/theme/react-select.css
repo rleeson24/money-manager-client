@@ -1,0 +1,126 @@
+/**
+ * Theme-aware styles for react-select (pm-select & cat-select).
+ * Overrides default light menu/control colors so dropdown options stay readable
+ * in both light and dark themes.
+ */
+
+.pm-select__control,
+.cat-select__control {
+  background-color: var(--color-surface-input) !important;
+  border-color: var(--color-border-input) !important;
+  color: var(--color-text);
+}
+
+.pm-select__control--is-focused,
+.cat-select__control--is-focused {
+  border-color: var(--color-primary) !important;
+  box-shadow: var(--shadow-focus) !important;
+}
+
+.pm-select__single-value,
+.cat-select__single-value {
+  color: var(--color-text) !important;
+}
+
+.pm-select__input-container,
+.cat-select__input-container {
+  color: var(--color-text);
+}
+
+.pm-select__input-container input,
+.cat-select__input-container input {
+  color: var(--color-text) !important;
+}
+
+.pm-select__placeholder,
+.cat-select__placeholder {
+  color: var(--color-text-placeholder) !important;
+}
+
+.pm-select__menu,
+.cat-select__menu {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.pm-select__menu-list,
+.cat-select__menu-list {
+  background-color: var(--color-surface);
+}
+
+.pm-select__option,
+.cat-select__option {
+  background-color: transparent !important;
+  color: var(--color-text) !important;
+  cursor: pointer;
+}
+
+.pm-select__option--is-focused,
+.cat-select__option--is-focused {
+  background-color: var(--color-surface-focus) !important;
+  color: var(--color-text-heading) !important;
+}
+
+.pm-select__option--is-selected,
+.cat-select__option--is-selected {
+  background-color: var(--color-primary) !important;
+  color: var(--color-on-accent) !important;
+}
+
+.pm-select__option--is-selected.pm-select__option--is-focused,
+.cat-select__option--is-selected.cat-select__option--is-focused {
+  background-color: var(--color-primary-hover) !important;
+  color: var(--color-on-accent) !important;
+}
+
+.pm-select__option--is-disabled,
+.cat-select__option--is-disabled {
+  color: var(--color-text-subtle) !important;
+}
+
+.pm-select__group-heading,
+.cat-select__group-heading {
+  color: var(--color-text-muted) !important;
+  background-color: var(--color-surface-muted);
+}
+
+.pm-select__indicator-separator,
+.cat-select__indicator-separator {
+  background-color: var(--color-border-input);
+}
+
+.pm-select__dropdown-indicator,
+.cat-select__dropdown-indicator,
+.pm-select__clear-indicator,
+.cat-select__clear-indicator {
+  color: var(--color-text-subtle);
+}
+
+.pm-select__dropdown-indicator:hover,
+.cat-select__dropdown-indicator:hover,
+.pm-select__clear-indicator:hover,
+.cat-select__clear-indicator:hover {
+  color: var(--color-text);
+}
+
+.pm-select__multi-value,
+.cat-select__multi-value {
+  background-color: var(--color-surface-badge);
+}
+
+.pm-select__multi-value__label,
+.cat-select__multi-value__label {
+  color: var(--color-text) !important;
+}
+
+.pm-select__multi-value__remove,
+.cat-select__multi-value__remove {
+  color: var(--color-text-subtle);
+}
+
+.pm-select__multi-value__remove:hover,
+.cat-select__multi-value__remove:hover {
+  background-color: var(--color-danger);
+  color: var(--color-on-accent);
+}

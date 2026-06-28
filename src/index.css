@@ -13,6 +13,7 @@
 
 @import "tailwindcss";
 @import "./theme/themes.css";
+@import "./theme/react-select.css";
 
 @variant dark (&:where(.dark, .dark *));
 
