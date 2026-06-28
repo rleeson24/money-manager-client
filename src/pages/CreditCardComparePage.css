@@ -1,0 +1,119 @@
+.credit-card-compare-page {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0 1rem 1rem;
+}
+
+.credit-card-compare-page > .page-header-bar {
+  flex-shrink: 0;
+}
+
+.credit-card-compare-card {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.credit-card-compare-upload {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.credit-card-compare-summary {
+  flex-shrink: 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-subtle);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.credit-card-compare-error {
+  flex-shrink: 0;
+  margin: 1rem 1rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--color-error-bg);
+  color: var(--color-error-text-strong);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.credit-card-compare-loading {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.credit-card-compare-empty {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--color-text-subtle);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.credit-card-compare-grid {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.credit-card-compare-grid-header {
+  flex-shrink: 0;
+  padding: 0 1rem;
+  background: var(--color-surface-subtle);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.credit-card-compare-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 1rem;
+}
+
+.credit-card-compare-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.credit-card-compare-table--header th {
+  border-bottom: none;
+}
+
+.credit-card-compare-file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.credit-card-compare-file-label input[type="file"] {
+  font-size: 0.8125rem;
+}
+
+.credit-card-compare-file-name {
+  font-size: 0.8125rem;
+  color: var(--color-text-subtle);
+}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ReactSelect, { SingleValue } from "react-select";
 import {
   Card,
@@ -43,6 +44,7 @@ type SortColumn =
   | null;
 
 export default function CreditCardExpenses() {
+  const navigate = useNavigate();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -560,9 +562,24 @@ export default function CreditCardExpenses() {
         )}
 
         <div className="credit-card-expenses-footer">
-          <Button onClick={handleMarkAsPaid} variant="primary" disabled={loading}>
-            Mark as paid
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleMarkAsPaid} variant="primary" disabled={loading}>
+              Mark as paid
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedPaymentMethod != null) {
+                  navigate(
+                    `/expenses/creditcard/compare?paymentMethod=${selectedPaymentMethod}`
+                  );
+                }
+              }}
+              variant="secondary"
+              disabled={loading || selectedPaymentMethod == null}
+            >
+              Compare CSV
+            </Button>
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Credit Owed:</span>
             <Input
