@@ -9,7 +9,7 @@
  * - Add new expenses
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import type { Expense } from "../types/expense";
 import { DEFAULT_EXPENSE_CURRENCY } from "../types/expense";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
@@ -63,8 +63,11 @@ function AddExpense() {
     id: 0,
   });
   const [amountStr, setAmountStr] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const focusDateAfterSaveRef = useRef(false);
 
   useEffect(() => {
     Promise.all([getCategories(), getPaymentMethods()])
@@ -77,6 +80,13 @@ function AddExpense() {
   useEffect(() => {
     setSessionExpenses(expenses);
   }, [expenses]);
+
+  useEffect(() => {
+    if (!isSaving && focusDateAfterSaveRef.current) {
+      focusDateAfterSaveRef.current = false;
+      dateInputRef.current?.focus();
+    }
+  }, [isSaving]);
 
   function populateFormFromExpense(expense: Expense) {
     setEditingExpenseId(expIdNum(expense));
@@ -209,6 +219,7 @@ function AddExpense() {
     const amountNum = getValidatedAmount();
     if (amountNum == null) return;
 
+    setIsSaving(true);
     try {
       await persistFormExpense(amountNum);
 
@@ -224,9 +235,12 @@ function AddExpense() {
         id: 0,
       });
       setAmountStr("");
+      focusDateAfterSaveRef.current = true;
     } catch (err) {
       setError("Failed to save expense. Please try again.");
       console.error("Error saving expense:", err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -308,12 +322,18 @@ function AddExpense() {
         <section className="expense-form-section">
           <h2>{isEditMode ? "Edit Expense" : "Add New Expense"}</h2>
 
-          <form onSubmit={handleSubmit} className="expense-form">
+          <form
+            onSubmit={handleSubmit}
+            className="expense-form"
+            aria-busy={isSaving}
+          >
+            <fieldset disabled={isSaving} className="expense-form-fieldset">
             <div className="form-group">
               <label htmlFor="date">
                 Date <span className="required">*</span>
               </label>
               <input
+                ref={dateInputRef}
                 type="date"
                 id="date"
                 name="date"
@@ -367,6 +387,7 @@ function AddExpense() {
                 classNamePrefix="pm-select"
                 isClearable
                 isSearchable
+                isDisabled={isSaving}
                 options={paymentMethodOptions}
                 value={
                   formData.paymentMethod != null
@@ -394,6 +415,7 @@ function AddExpense() {
                 classNamePrefix="cat-select"
                 isClearable
                 isSearchable
+                isDisabled={isSaving}
                 options={categoryOptions}
                 value={resolveCategorySelectValue(categoryOptions, formData.category)}
                 onChange={(opt: SingleValue<{ value: string; label: string }>) =>
@@ -423,7 +445,11 @@ function AddExpense() {
                 type="submit"
                 className="submit-button"
               >
-                {isEditMode ? "Update Expense" : "Add Expense"}
+                {isSaving
+                  ? "Saving..."
+                  : isEditMode
+                    ? "Update Expense"
+                    : "Add Expense"}
               </button>
               {isEditMode && (
                 <button
@@ -435,6 +461,7 @@ function AddExpense() {
                 </button>
               )}
             </div>
+            </fieldset>
           </form>
         </section>
 
