@@ -1,6 +1,7 @@
 import { USE_API, apiJson, ApiError } from "../config/api";
 import type { Expense } from "../types/expense";
 import { DEFAULT_EXPENSE_CURRENCY } from "../types/expense";
+import { mockCategories } from "../data/mockCategoriesData";
 
 /** Thrown when the server returns 409 Conflict (expense was already updated). */
 export class UpdateConflictError extends Error {
@@ -130,6 +131,66 @@ export async function getExpenses(params?: {
         (exp.amount != null && exp.amount.toString().includes(term))
     );
   }
+  return filtered.map(toExpense);
+}
+
+export interface SearchExpensesParams {
+  fromDate: string;
+  toDate: string;
+  search?: string;
+  category?: number;
+  includeChildCategories?: boolean;
+  signal?: AbortSignal;
+}
+
+/**
+ * Search expenses by date range with optional description or category filter.
+ * When USE_API: GET /api/expenses?fromDate=&toDate=&search=&category=&includeChildCategories=
+ */
+export async function searchExpenses(params: SearchExpensesParams): Promise<Expense[]> {
+  const searchTerm = params.search?.trim();
+  const hasSearch = Boolean(searchTerm);
+  const hasCategory = params.category != null;
+
+  if (USE_API) {
+    const searchParams = new URLSearchParams();
+    searchParams.set("fromDate", params.fromDate);
+    searchParams.set("toDate", params.toDate);
+    if (hasSearch) searchParams.set("search", searchTerm!);
+    if (hasCategory) searchParams.set("category", String(params.category));
+    if (params.includeChildCategories) searchParams.set("includeChildCategories", "true");
+    const data = await apiJson<ApiExpense[]>(
+      `/api/expenses?${searchParams.toString()}`,
+      { signal: params.signal },
+      "Failed to search expenses"
+    );
+    return (Array.isArray(data) ? data : []).map(toExpense);
+  }
+
+  let filtered = mockExpenses.filter((exp) => {
+    const date = exp.expenseDate.substring(0, 10);
+    return date >= params.fromDate && date <= params.toDate;
+  });
+
+  if (hasSearch) {
+    const term = searchTerm!.toLowerCase();
+    filtered = filtered.filter(
+      (exp) => exp.expense && exp.expense.toLowerCase().includes(term)
+    );
+  }
+
+  if (hasCategory) {
+    const categoryIds = new Set<number>([params.category!]);
+    if (params.includeChildCategories) {
+      mockCategories
+        .filter((c) => c.parentCategory_I === params.category)
+        .forEach((c) => categoryIds.add(c.category_I));
+    }
+    filtered = filtered.filter(
+      (exp) => exp.category != null && categoryIds.has(exp.category)
+    );
+  }
+
   return filtered.map(toExpense);
 }
 

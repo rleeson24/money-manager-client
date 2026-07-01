@@ -14,6 +14,7 @@ import AddExpense from "./pages/AddExpense";
 import EditExpenses from "./pages/EditExpenses";
 import CreditCardExpenses from "./pages/CreditCardExpenses";
 import CreditCardComparePage from "./pages/CreditCardComparePage";
+import ExpenseSearchPage from "./pages/ExpenseSearchPage";
 import AdministrationPage from "./pages/AdministrationPage";
 import ImportPage from "./pages/ImportPage";
 import CategoriesPage from "./pages/CategoriesPage";
@@ -33,6 +34,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/expenses/add" element={<AddExpense />} />
             <Route path="/expenses" element={<EditExpenses />} />
+            <Route path="/expenses/search" element={<ExpenseSearchPage />} />
             <Route path="/expenses/creditcard" element={<CreditCardExpenses />} />
             <Route path="/expenses/creditcard/compare" element={<CreditCardComparePage />} />
             <Route path="/administration" element={<AdministrationPage />}>
