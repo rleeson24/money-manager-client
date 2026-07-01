@@ -38,6 +38,21 @@
   gap: 0.5rem;
 }
 
+.edit-expenses-toolbar__summary {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.edit-expenses-toolbar__total {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
 .edit-expenses-grid {
   flex: 1;
   min-height: 0;

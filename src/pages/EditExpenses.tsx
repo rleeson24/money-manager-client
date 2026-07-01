@@ -701,6 +701,11 @@ export default function EditExpenses() {
     setSelectedExpenses(new Set());
   }
 
+  const expensesTotal = useMemo(
+    () => expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0),
+    [expenses]
+  );
+
   // Calculate sum of selected expenses
   function getSelectedSum(): number {
     return expenses
@@ -818,22 +823,28 @@ export default function EditExpenses() {
             >
               Delete ({selectedExpenses.size})
             </Button>
-            {selectedExpenses.size > 0 && (
-              <div className="flex items-center gap-3 ml-2">
-                <span className="text-sm text-gray-600 dark:text-slate-300">
-                  {selectedExpenses.size} expense
-                  {selectedExpenses.size !== 1 ? "s" : ""} selected
-                </span>
-                <span className="text-sm font-semibold text-blue-600">
-                  Total: ${getSelectedSum().toFixed(2)}
-                </span>
-              </div>
-            )}
-            {debouncedSearchTerm && (
-              <span className="text-xs text-gray-500 dark:text-slate-400">
-                (search: &quot;{debouncedSearchTerm}&quot;)
+            <div className="edit-expenses-toolbar__summary">
+              {selectedExpenses.size > 0 && (
+                <>
+                  <span className="text-sm text-gray-600 dark:text-slate-300">
+                    {selectedExpenses.size} expense
+                    {selectedExpenses.size !== 1 ? "s" : ""} selected
+                  </span>
+                  <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                    Selected: ${getSelectedSum().toFixed(2)}
+                  </span>
+                </>
+              )}
+              <span className="edit-expenses-toolbar__total">
+                {expenses.length} expense{expenses.length !== 1 ? "s" : ""} · Total: $
+                {expensesTotal.toFixed(2)}
               </span>
-            )}
+              {debouncedSearchTerm && (
+                <span className="text-xs text-gray-500 dark:text-slate-400">
+                  (search: &quot;{debouncedSearchTerm}&quot;)
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
