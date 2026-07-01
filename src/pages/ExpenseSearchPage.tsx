@@ -63,6 +63,11 @@ export default function ExpenseSearchPage() {
     selectedCategory?.hasChildren && selectedCategory.parentCategory_I == null
   );
 
+  const resultsTotal = useMemo(
+    () => (results ?? []).reduce((sum, exp) => sum + exp.amount, 0),
+    [results]
+  );
+
   useEffect(() => {
     const ac = new AbortController();
     void getCategories(ac.signal, true)
@@ -208,6 +213,8 @@ export default function ExpenseSearchPage() {
           <>
             <div className="expense-search-summary">
               {results.length} expense{results.length !== 1 ? "s" : ""} found
+              {" · "}
+              <strong>Total: {formatCurrency(resultsTotal)}</strong>
             </div>
             <div className="expense-search-grid">
               <div className="expense-search-grid-header">
