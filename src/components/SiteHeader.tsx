@@ -4,7 +4,8 @@
  * Global site header with navigation menu for main app sections.
  */
 
-import { NavLink } from "react-router-dom";
+import { useEffect, useId, useRef, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { USE_API } from "../config/api";
 import { isAuthEnabled } from "../auth/msalConfig";
 import AuthUserMenu from "./AuthUserMenu";
@@ -47,30 +48,86 @@ const iconSearch = (
   </svg>
 );
 
+const iconMenu = (
+  <svg className="site-header__menu-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <line x1="4" y1="7" x2="20" y2="7" />
+    <line x1="4" y1="12" x2="20" y2="12" />
+    <line x1="4" y1="17" x2="20" y2="17" />
+  </svg>
+);
+
+const iconClose = (
+  <svg className="site-header__menu-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <line x1="6" y1="6" x2="18" y2="18" />
+    <line x1="18" y1="6" x2="6" y2="18" />
+  </svg>
+);
+
 const navItems = [
   { to: "/expenses/add", label: "Add Expense", icon: iconEdit },
-  { to: "/expenses", label: "Edit Expenses", icon: iconChatGPT },
+  { to: "/expenses", label: "Edit Expenses", icon: iconChatGPT, end: true },
   { to: "/expenses/search", label: "Search Expenses", icon: iconSearch },
   { to: "/expenses/creditcard", label: "Credit Card Expenses", icon: iconCreditCard },
   { to: "/administration", label: "Administration", icon: iconAdministration },
 ] as const;
 
 function SiteHeader() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const navId = useId();
+  const headerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+
+    function onPointerDown(event: PointerEvent) {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [menuOpen]);
+
   return (
-    <header className="site-header">
+    <header className="site-header" ref={headerRef}>
       <div className="site-header__inner">
-        <NavLink to="/" className="site-header__brand">
+        <NavLink
+          to="/"
+          className="site-header__brand"
+          onClick={() => setMenuOpen(false)}
+        >
           Money Manager
         </NavLink>
-        <nav className="site-header__nav" aria-label="Main navigation">
+
+        <nav
+          id={navId}
+          className={`site-header__nav${menuOpen ? " site-header__nav--open" : ""}`}
+          aria-label="Main navigation"
+        >
           <ul className="site-header__menu">
-            {navItems.map(({ to, label, icon }) => (
+            {navItems.map(({ to, label, icon, ...linkProps }) => (
               <li key={to}>
                 <NavLink
                   to={to}
+                  {...linkProps}
                   className={({ isActive }) =>
                     `site-header__link ${isActive ? "site-header__link--active" : ""}`
                   }
+                  onClick={() => setMenuOpen(false)}
                 >
                   {icon}
                   <span>{label}</span>
@@ -79,7 +136,20 @@ function SiteHeader() {
             ))}
           </ul>
         </nav>
-        {USE_API && isAuthEnabled ? <AuthUserMenu /> : null}
+
+        <div className="site-header__end">
+          {USE_API && isAuthEnabled ? <AuthUserMenu /> : null}
+          <button
+            type="button"
+            className="site-header__menu-toggle"
+            aria-expanded={menuOpen}
+            aria-controls={navId}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? iconClose : iconMenu}
+          </button>
+        </div>
       </div>
     </header>
   );

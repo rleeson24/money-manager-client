@@ -35,3 +35,13 @@
 .page-header-bar__back {
   white-space: nowrap;
 }
+
+@media (max-width: 768px) {
+  .page-header-bar__inner {
+    flex-wrap: wrap;
+  }
+
+  .page-header-bar__title {
+    white-space: normal;
+  }
+}

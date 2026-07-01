@@ -328,3 +328,35 @@
   font-size: 0.875rem;
   color: var(--color-text-subtle);
 }
+
+@media (max-width: 768px) {
+  .edit-expenses-page {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .edit-expenses-card {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .edit-expenses-grid {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .edit-expenses-table-scroll {
+    flex: none;
+    min-height: auto;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .edit-expenses-toolbar__summary {
+    margin-left: 0;
+    width: 100%;
+  }
+}

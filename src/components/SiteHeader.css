@@ -14,9 +14,7 @@
   padding: 0.75rem 1.5rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .site-header .site-header__brand {
@@ -25,6 +23,7 @@
   color: var(--color-on-accent);
   text-decoration: none;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .site-header .site-header__brand:hover {
@@ -75,6 +74,36 @@
   flex-shrink: 0;
 }
 
+.site-header .site-header__end {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.site-header .site-header__menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem;
+  border: 1px solid var(--color-glass-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-on-accent);
+  cursor: pointer;
+  margin: 0;
+  transition: background-color 0.2s;
+}
+
+.site-header .site-header__menu-toggle:hover {
+  background: var(--color-glass-section);
+}
+
+.site-header .site-header__menu-toggle-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
 .site-header .site-header__user {
   display: flex;
   align-items: center;
@@ -109,13 +138,54 @@
   background: var(--color-glass-section);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .site-header .site-header__inner {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .site-header .site-header__brand {
+    order: 1;
+  }
+
+  .site-header .site-header__end {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .site-header .site-header__menu-toggle {
+    display: inline-flex;
+  }
+
+  .site-header .site-header__nav {
+    order: 3;
+    flex-basis: 100%;
+    display: none;
+  }
+
+  .site-header .site-header__nav--open {
+    display: block;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-glass-border);
   }
 
   .site-header .site-header__menu {
-    justify-content: center;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .site-header .site-header__menu li {
+    width: 100%;
+  }
+
+  .site-header .site-header__link {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .site-header .site-header__user-name {
+    display: none;
   }
 }

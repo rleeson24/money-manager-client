@@ -140,3 +140,50 @@
 .expense-search-table--header th {
   border-bottom: none;
 }
+
+@media (max-width: 768px) {
+  .expense-search-page {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .expense-search-card {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .expense-search-loading,
+  .expense-search-empty {
+    flex: none;
+    min-height: auto;
+  }
+
+  .expense-search-grid {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .expense-search-table-scroll {
+    flex: none;
+    min-height: auto;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .expense-search-field {
+    flex: 1 1 100%;
+  }
+
+  .expense-search-field--range select,
+  .expense-search-field--search input {
+    width: 100%;
+  }
+
+  .expense-search-field--category {
+    min-width: 0;
+    max-width: none;
+  }
+}
