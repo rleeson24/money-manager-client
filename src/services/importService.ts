@@ -108,6 +108,7 @@ export const IMPORT_SOURCES = {
 } as const satisfies Record<string, ImportSource>;
 
 /** Infer format from file extension. */
-export function formatFromFile(_file: File): string {
+export function formatFromFile(file: File): string {
+  void file;
   return "CSV";
 }
