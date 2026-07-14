@@ -13,6 +13,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { MsalProvider } from "@azure/msal-react";
 import App from "./App.tsx";
+import ApiHealthProvider from "./components/ApiHealthProvider";
 import { initializeMsal, msalInstance } from "./auth/msalConfig";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import "./index.css";
@@ -23,7 +24,9 @@ async function bootstrap() {
   const app = (
     <React.StrictMode>
       <ThemeProvider>
-        <App />
+        <ApiHealthProvider>
+          <App />
+        </ApiHealthProvider>
       </ThemeProvider>
     </React.StrictMode>
   );

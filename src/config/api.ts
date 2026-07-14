@@ -4,6 +4,7 @@
  */
 import { getAuthHeaders } from "../auth/authHeaders";
 import { isAuthEnabled } from "../auth/msalConfig";
+import { waitForApiHealthy } from "../services/apiHealth";
 
 export const USE_API = import.meta.env.VITE_USE_API === "true";
 
@@ -43,6 +44,10 @@ export async function apiJson<T>(
   options: RequestInit = {},
   errorMessage?: string
 ): Promise<T | undefined> {
+  if (USE_API) {
+    await waitForApiHealthy(options.signal ?? undefined);
+  }
+
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   };

@@ -1,6 +1,7 @@
 import { API_BASE, apiJson, USE_API } from "../config/api";
 import { getAuthHeaders } from "../auth/authHeaders";
 import { isAuthEnabled } from "../auth/msalConfig";
+import { waitForApiHealthy } from "./apiHealth";
 
 export interface ImportResult {
   created: number;
@@ -36,6 +37,10 @@ export async function importFromFile(
   form.append("format", format);
   form.append("importSource", importSource);
   form.append("paymentMethodId", String(paymentMethodId));
+
+  if (USE_API) {
+    await waitForApiHealthy();
+  }
 
   const headers: Record<string, string> = {};
   if (USE_API && isAuthEnabled) {
