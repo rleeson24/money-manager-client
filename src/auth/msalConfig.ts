@@ -18,11 +18,13 @@ export const apiScopes = apiScope ? [apiScope] : [];
 
 export const loginScopes = ["User.Read", ...apiScopes];
 
+const redirectUri = `${window.location.origin}/auth/redirect.html`;
+
 const msalConfiguration: Configuration = {
   auth: {
     clientId,
     authority: `https://login.microsoftonline.com/${tenantId}`,
-    redirectUri: window.location.origin,
+    redirectUri,
     postLogoutRedirectUri: window.location.origin,
   },
   cache: {

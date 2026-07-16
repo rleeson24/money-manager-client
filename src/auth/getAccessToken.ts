@@ -1,18 +1,38 @@
 import {
   BrowserAuthError,
   InteractionRequiredAuthError,
+  type AccountInfo,
   type AuthenticationResult,
 } from "@azure/msal-browser";
-import { apiScopes, isAuthEnabled, msalInstance } from "./msalConfig";
+import { apiScopes, isAuthEnabled, loginScopes, msalInstance } from "./msalConfig";
 
 let inFlightTokenRequest: Promise<string | undefined> | null = null;
+let interactiveRedirectPending = false;
 let cachedAccessToken: string | null = null;
 let cachedExpiresAt = 0;
+
+const INTERACTIVE_AUTH_ERROR_CODES = new Set([
+  "timed_out",
+  "monitor_window_timeout",
+  "iframe_closed_prematurely",
+  "block_iframe_reload",
+]);
 
 function isInteractionInProgress(error: unknown): boolean {
   return (
     error instanceof BrowserAuthError &&
     error.errorCode === "interaction_in_progress"
+  );
+}
+
+function requiresInteractiveAuth(error: unknown): boolean {
+  if (error instanceof InteractionRequiredAuthError) {
+    return true;
+  }
+
+  return (
+    error instanceof BrowserAuthError &&
+    INTERACTIVE_AUTH_ERROR_CODES.has(error.errorCode)
   );
 }
 
@@ -40,6 +60,26 @@ export function clearAccessTokenCache() {
   cachedExpiresAt = 0;
 }
 
+async function beginInteractiveAuth(account: AccountInfo | null): Promise<undefined> {
+  if (!msalInstance || interactiveRedirectPending) {
+    return undefined;
+  }
+
+  interactiveRedirectPending = true;
+  clearAccessTokenCache();
+
+  if (account) {
+    await msalInstance.acquireTokenRedirect({
+      scopes: apiScopes,
+      account,
+    });
+  } else {
+    await msalInstance.loginRedirect({ scopes: loginScopes });
+  }
+
+  return undefined;
+}
+
 async function acquireTokenOnce(): Promise<string | undefined> {
   if (!isAuthEnabled || !msalInstance) return undefined;
 
@@ -49,10 +89,10 @@ async function acquireTokenOnce(): Promise<string | undefined> {
   }
 
   const account =
-    msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0];
+    msalInstance.getActiveAccount() ?? msalInstance.getAllAccounts()[0] ?? null;
   if (!account) return undefined;
 
-  const maxAttempts = 10;
+  const maxAttempts = 5;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       const result = await msalInstance.acquireTokenSilent({
@@ -62,16 +102,12 @@ async function acquireTokenOnce(): Promise<string | undefined> {
       storeCachedToken(result);
       return result.accessToken;
     } catch (error) {
-      if (error instanceof InteractionRequiredAuthError) {
-        await msalInstance.acquireTokenRedirect({
-          scopes: apiScopes,
-          account,
-        });
-        return undefined;
+      if (requiresInteractiveAuth(error)) {
+        return beginInteractiveAuth(account);
       }
 
       if (isInteractionInProgress(error) && attempt < maxAttempts - 1) {
-        await delay(200 * (attempt + 1));
+        await delay(250 * (attempt + 1));
         continue;
       }
 

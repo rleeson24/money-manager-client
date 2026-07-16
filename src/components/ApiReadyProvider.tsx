@@ -2,7 +2,6 @@ import { InteractionStatus } from "@azure/msal-browser";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { USE_API } from "../config/api";
-import { getAccessToken } from "../auth/getAccessToken";
 import { isAuthEnabled, msalInstance } from "../auth/msalConfig";
 import {
   getApiHealthStatus,
@@ -84,15 +83,8 @@ function ApiReadyWithAuth({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setApiReady(canUseApp);
-
-    if (canUseApp && isAuthenticated) {
-      void getAccessToken().catch(() => {
-        // Token acquisition may redirect or fail later; apiJson handles that.
-      });
-    }
-
     return () => setApiReady(false);
-  }, [canUseApp, isAuthenticated]);
+  }, [canUseApp]);
 
   if (!dbReady) {
     return (
