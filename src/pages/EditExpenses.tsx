@@ -32,6 +32,7 @@ import {
   resolveCategorySelectValue,
 } from "../utils/categoryOptions";
 import { isAbortError } from "../config/api";
+import { useApiReady } from "../hooks/useApiReady";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 import {
   localDateInputToUtc,
@@ -139,6 +140,7 @@ function focusDraftRowField(draftRowEl: HTMLTableRowElement | null, field: Draft
 }
 
 export default function EditExpenses() {
+  const apiReady = useApiReady();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -283,6 +285,8 @@ export default function EditExpenses() {
   }, [isSavingDraft]);
 
   useEffect(() => {
+    if (!apiReady) return;
+
     const ac = new AbortController();
     const search = debouncedSearchTerm.trim() || undefined;
     Promise.all([
@@ -301,7 +305,7 @@ export default function EditExpenses() {
         console.error("Failed to load expenses page data:", err);
       });
     return () => ac.abort();
-  }, [month, debouncedSearchTerm]);
+  }, [month, debouncedSearchTerm, apiReady]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

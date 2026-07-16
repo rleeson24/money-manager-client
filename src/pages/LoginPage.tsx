@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { Navigate, useLocation } from "react-router-dom";
 import { isAuthEnabled, loginScopes } from "../auth/msalConfig";
@@ -11,22 +10,6 @@ function LoginPage() {
   const location = useLocation();
   const from =
     (location.state as { from?: string } | null)?.from ?? "/expenses/add";
-
-  useEffect(() => {
-    if (!isAuthEnabled || !USE_API) return;
-    if (isAuthenticated) return;
-
-    instance
-      .handleRedirectPromise()
-      .then((result) => {
-        if (result?.account) {
-          instance.setActiveAccount(result.account);
-        }
-      })
-      .catch((error) => {
-        console.error("MSAL redirect handling failed:", error);
-      });
-  }, [instance, isAuthenticated]);
 
   if (!USE_API || !isAuthEnabled) {
     return <Navigate to="/" replace />;

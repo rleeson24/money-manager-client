@@ -2,6 +2,7 @@ import { API_BASE, apiJson, USE_API } from "../config/api";
 import { getAuthHeaders } from "../auth/authHeaders";
 import { isAuthEnabled } from "../auth/msalConfig";
 import { waitForApiHealthy } from "./apiHealth";
+import { waitForApiReady } from "./apiReady";
 
 export interface ImportResult {
   created: number;
@@ -40,6 +41,7 @@ export async function importFromFile(
 
   if (USE_API) {
     await waitForApiHealthy();
+    await waitForApiReady();
   }
 
   const headers: Record<string, string> = {};
