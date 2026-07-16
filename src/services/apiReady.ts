@@ -12,13 +12,6 @@ function resolveWaiters() {
   }
 }
 
-function rejectWaiters(err: unknown) {
-  const pending = waiters.splice(0, waiters.length);
-  for (const waiter of pending) {
-    waiter.reject(err);
-  }
-}
-
 export function getApiReady(): boolean {
   return ready;
 }
@@ -35,8 +28,6 @@ export function setApiReady(next: boolean) {
 
   if (next) {
     resolveWaiters();
-  } else {
-    rejectWaiters(new DOMException("Aborted", "AbortError"));
   }
 }
 

@@ -65,66 +65,42 @@ function ApiReadyWithAuth({ children }: { children: ReactNode }) {
   const healthStatus = useHealthPolling();
   const { inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
-  const [sessionReady, setSessionReady] = useState(false);
+  const [msalIdleTimedOut, setMsalIdleTimedOut] = useState(false);
+
+  const dbReady = healthStatus === "healthy";
+  const msalIdle = inProgress === InteractionStatus.None;
+  const msalReady = !isAuthenticated || msalIdle || msalIdleTimedOut;
+  const canUseApp = dbReady && msalReady;
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function prepareSession() {
-      if (healthStatus !== "healthy") {
-        setSessionReady(false);
-        setApiReady(false);
-        return;
-      }
-
-      if (!isAuthenticated) {
-        setSessionReady(false);
-        setApiReady(true);
-        return;
-      }
-
-      if (inProgress !== InteractionStatus.None) {
-        setSessionReady(false);
-        setApiReady(false);
-        return;
-      }
-
-      try {
-        const token = await getAccessToken();
-        if (cancelled) {
-          return;
-        }
-
-        if (token) {
-          setSessionReady(true);
-          setApiReady(true);
-        } else {
-          setSessionReady(false);
-          setApiReady(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setSessionReady(false);
-          setApiReady(false);
-        }
-      }
+    if (!isAuthenticated || msalIdle) {
+      setMsalIdleTimedOut(false);
+      return;
     }
 
-    void prepareSession();
+    const timer = window.setTimeout(() => setMsalIdleTimedOut(true), 5000);
+    return () => window.clearTimeout(timer);
+  }, [isAuthenticated, msalIdle]);
 
-    return () => {
-      cancelled = true;
-      setApiReady(false);
-    };
-  }, [healthStatus, inProgress, isAuthenticated]);
+  useEffect(() => {
+    setApiReady(canUseApp);
 
-  if (healthStatus !== "healthy") {
+    if (canUseApp && isAuthenticated) {
+      void getAccessToken().catch(() => {
+        // Token acquisition may redirect or fail later; apiJson handles that.
+      });
+    }
+
+    return () => setApiReady(false);
+  }, [canUseApp, isAuthenticated]);
+
+  if (!dbReady) {
     return (
       <ApiReadyLoading message="Connecting to the database. This can take a minute after a long idle period." />
     );
   }
 
-  if (isAuthenticated && (inProgress !== InteractionStatus.None || !sessionReady)) {
+  if (isAuthenticated && !msalReady) {
     return <ApiReadyLoading message="Preparing your session..." />;
   }
 
