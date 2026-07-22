@@ -18,7 +18,7 @@ export const apiScopes = apiScope ? [apiScope] : [];
 
 export const loginScopes = ["User.Read", ...apiScopes];
 
-const redirectUri = `${window.location.origin}/auth/redirect.html`;
+const redirectUri = `${window.location.origin}/auth/redirect`;
 
 const msalConfiguration: Configuration = {
   auth: {
