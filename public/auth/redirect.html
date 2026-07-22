@@ -5,16 +5,6 @@
     <title>Signing in...</title>
   </head>
   <body>
-    <script>
-      // MSAL silent auth uses this page in a hidden iframe — do not boot the SPA there.
-      // After interactive login, forward the hash to the app so handleRedirectPromise can run.
-      if (window.parent !== window) {
-        // Hidden iframe: MSAL reads the hash from this document.
-      } else if (window.location.hash) {
-        window.location.replace(window.location.origin + "/" + window.location.hash);
-      } else {
-        window.location.replace(window.location.origin + "/");
-      }
-    </script>
+    <script src="/auth/redirect.js"></script>
   </body>
 </html>

@@ -1,2 +1,3 @@
+/auth/redirect       /auth/redirect.html  200
 /auth/redirect.html  /auth/redirect.html  200
 /*                    /index.html           200
