@@ -2,7 +2,7 @@
   X-Frame-Options: SAMEORIGIN
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'self'
 
-/auth/redirect.html
+/auth/redirect/
   X-Frame-Options: SAMEORIGIN
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'self'
 

@@ -1,2 +1,4 @@
-/auth/redirect  /auth/redirect.html  200
-/*              /index.html           200
+# Auth callback: 200 rewrite only — never 301/302/308 between /auth/redirect and
+# /auth/redirect.html (Cloudflare strips .html with 308, causing infinite loops).
+/auth/redirect  /auth/redirect/index.html  200
+/*              /index.html                200

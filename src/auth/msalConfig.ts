@@ -19,12 +19,9 @@ export const apiScopes = apiScope ? [apiScope] : [];
 
 export const loginScopes = ["User.Read", ...apiScopes];
 
-// Production uses extensionless /auth/redirect (Cloudflare 308s .html URLs back).
-// Local dev serves auth/redirect.html directly from Vite.
-const redirectPath = import.meta.env.PROD
-  ? "/auth/redirect"
-  : "/auth/redirect.html";
-const redirectUri = `${window.location.origin}${redirectPath}`;
+// Must match Azure AD SPA redirect URI exactly (no trailing slash, no .html).
+// Served by auth/redirect/index.html — a minimal MSAL page, not the React app.
+const redirectUri = `${window.location.origin}/auth/redirect`;
 
 const msalConfiguration: Configuration = {
   auth: {
