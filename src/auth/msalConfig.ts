@@ -19,7 +19,12 @@ export const apiScopes = apiScope ? [apiScope] : [];
 
 export const loginScopes = ["User.Read", ...apiScopes];
 
-const redirectUri = `${window.location.origin}/auth/redirect.html`;
+// Production uses extensionless /auth/redirect (Cloudflare 308s .html URLs back).
+// Local dev serves auth/redirect.html directly from Vite.
+const redirectPath = import.meta.env.PROD
+  ? "/auth/redirect"
+  : "/auth/redirect.html";
+const redirectUri = `${window.location.origin}${redirectPath}`;
 
 const msalConfiguration: Configuration = {
   auth: {
