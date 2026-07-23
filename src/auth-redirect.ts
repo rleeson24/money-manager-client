@@ -1,4 +1,4 @@
-import { initializeMsal } from "./auth/msalConfig";
+import { initializeMsal, msalInstance } from "./auth/msalConfig";
 
 async function handleAuthRedirect(): Promise<void> {
   if (window.parent !== window) {
@@ -6,8 +6,18 @@ async function handleAuthRedirect(): Promise<void> {
     return;
   }
 
-  await initializeMsal();
-  window.location.replace(`${window.location.origin}/`);
+  if (!msalInstance) {
+    window.location.replace(`${window.location.origin}/login`);
+    return;
+  }
+
+  const result = await initializeMsal();
+  if (result?.account) {
+    window.location.replace(`${window.location.origin}/`);
+    return;
+  }
+
+  window.location.replace(`${window.location.origin}/login`);
 }
 
 void handleAuthRedirect();

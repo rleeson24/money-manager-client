@@ -2,6 +2,7 @@ import {
   Configuration,
   LogLevel,
   PublicClientApplication,
+  type AuthenticationResult,
 } from "@azure/msal-browser";
 
 const clientId = import.meta.env.VITE_AZURE_CLIENT_ID ?? "";
@@ -18,7 +19,7 @@ export const apiScopes = apiScope ? [apiScope] : [];
 
 export const loginScopes = ["User.Read", ...apiScopes];
 
-const redirectUri = `${window.location.origin}/auth/redirect`;
+const redirectUri = `${window.location.origin}/auth/redirect.html`;
 
 const msalConfiguration: Configuration = {
   auth: {
@@ -41,18 +42,22 @@ export const msalInstance = isAuthEnabled
   ? new PublicClientApplication(msalConfiguration)
   : null;
 
-export async function initializeMsal(): Promise<void> {
-  if (!msalInstance) return;
+export async function initializeMsal(): Promise<AuthenticationResult | null> {
+  if (!msalInstance) return null;
 
   await msalInstance.initialize();
-  const result = await msalInstance.handleRedirectPromise();
+  const result = await msalInstance.handleRedirectPromise({
+    navigateToLoginRequestUrl: false,
+  });
   if (result?.account) {
     msalInstance.setActiveAccount(result.account);
-    return;
+    return result;
   }
 
   const accounts = msalInstance.getAllAccounts();
   if (accounts.length === 1) {
     msalInstance.setActiveAccount(accounts[0]);
   }
+
+  return result;
 }
