@@ -1,6 +1,7 @@
 import { InteractionStatus } from "@azure/msal-browser";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { getAccessToken } from "../auth/getAccessToken";
 import { USE_API } from "../config/api";
 import { isAuthEnabled, msalInstance } from "../auth/msalConfig";
 import {
@@ -43,6 +44,48 @@ function useHealthPolling(): ApiHealthStatus {
   return healthStatus;
 }
 
+function useAuthSessionReady(isAuthenticated: boolean, inProgress: InteractionStatus): boolean {
+  const [authSessionReady, setAuthSessionReady] = useState(
+    !USE_API || !isAuthEnabled || !isAuthenticated
+  );
+
+  useEffect(() => {
+    if (!USE_API || !isAuthEnabled) {
+      setAuthSessionReady(true);
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setAuthSessionReady(true);
+      return;
+    }
+
+    if (inProgress !== InteractionStatus.None) {
+      setAuthSessionReady(false);
+      return;
+    }
+
+    let cancelled = false;
+    void getAccessToken()
+      .then((token) => {
+        if (!cancelled) {
+          setAuthSessionReady(Boolean(token));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuthSessionReady(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, inProgress]);
+
+  return authSessionReady;
+}
+
 function ApiReadyWithoutAuth({ children }: { children: ReactNode }) {
   const healthStatus = useHealthPolling();
 
@@ -64,22 +107,10 @@ function ApiReadyWithAuth({ children }: { children: ReactNode }) {
   const healthStatus = useHealthPolling();
   const { inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
-  const [msalIdleTimedOut, setMsalIdleTimedOut] = useState(false);
+  const authSessionReady = useAuthSessionReady(isAuthenticated, inProgress);
 
   const dbReady = healthStatus === "healthy";
-  const msalIdle = inProgress === InteractionStatus.None;
-  const msalReady = !isAuthenticated || msalIdle || msalIdleTimedOut;
-  const canUseApp = dbReady && msalReady;
-
-  useEffect(() => {
-    if (!isAuthenticated || msalIdle) {
-      setMsalIdleTimedOut(false);
-      return;
-    }
-
-    const timer = window.setTimeout(() => setMsalIdleTimedOut(true), 5000);
-    return () => window.clearTimeout(timer);
-  }, [isAuthenticated, msalIdle]);
+  const canUseApp = dbReady && authSessionReady;
 
   useEffect(() => {
     setApiReady(canUseApp);
@@ -92,7 +123,7 @@ function ApiReadyWithAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  if (isAuthenticated && !msalReady) {
+  if (!authSessionReady) {
     return <ApiReadyLoading message="Preparing your session..." />;
   }
 

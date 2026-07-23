@@ -31,7 +31,9 @@ import {
   getCategoryLabel,
   resolveCategorySelectValue,
 } from "../utils/categoryOptions";
-import { isAbortError } from "../config/api";
+import { ApiError, isAbortError } from "../config/api";
+import { restartApiHealthPolling } from "../services/apiHealth";
+import { withTransientGetRetries } from "../services/transientRetry";
 import { useApiReady } from "../hooks/useApiReady";
 import { sanitizeAmountInput, formatAmountForBlur } from "../utils/amountInput";
 import {
@@ -289,21 +291,23 @@ export default function EditExpenses() {
 
     const ac = new AbortController();
     const search = debouncedSearchTerm.trim() || undefined;
-    Promise.all([
-      getExpenses({ month, search, signal: ac.signal }),
-      getCategories(ac.signal),
-      getPaymentMethods(ac.signal),
-    ])
-      .then(([expensesData, categoriesData, paymentMethodsData]) => {
-        if (ac.signal.aborted) return;
-        setExpenses(expensesData);
-        setCategories(categoriesData);
-        setPaymentMethods(paymentMethodsData);
-      })
-      .catch((err: unknown) => {
-        if (ac.signal.aborted || isAbortError(err)) return;
-        console.error("Failed to load expenses page data:", err);
-      });
+    void withTransientGetRetries(async () => {
+      const [expensesData, categoriesData, paymentMethodsData] = await Promise.all([
+        getExpenses({ month, search, signal: ac.signal }),
+        getCategories(ac.signal),
+        getPaymentMethods(ac.signal),
+      ]);
+      if (ac.signal.aborted) return;
+      setExpenses(expensesData);
+      setCategories(categoriesData);
+      setPaymentMethods(paymentMethodsData);
+    }, ac.signal).catch((err: unknown) => {
+      if (ac.signal.aborted || isAbortError(err)) return;
+      console.error("Failed to load expenses page data:", err);
+      if (err instanceof ApiError && err.status >= 500) {
+        restartApiHealthPolling();
+      }
+    });
     return () => ac.abort();
   }, [month, debouncedSearchTerm, apiReady]);
 

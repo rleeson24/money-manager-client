@@ -103,15 +103,43 @@ async function checkHealth(parentSignal: AbortSignal): Promise<boolean> {
 }
 
 export function startApiHealthPolling(): () => void {
-  if (!USE_API || status === "healthy") {
+  if (!USE_API) {
     return () => {};
   }
 
+  if (status === "healthy") {
+    return () => {};
+  }
+
+  return beginApiHealthPolling();
+}
+
+/** Re-probe after app requests fail while the DB is still waking up. */
+export function restartApiHealthPolling(): () => void {
+  if (!USE_API) {
+    return () => {};
+  }
+
+  stopActivePolling(false);
+  setStatus("idle");
+  return beginApiHealthPolling();
+}
+
+function stopActivePolling(rejectWaiters: boolean): void {
   pollAbort?.abort();
+  pollAbort = null;
   if (pollTimer) {
     clearTimeout(pollTimer);
     pollTimer = null;
   }
+  if (rejectWaiters && status !== "healthy") {
+    rejectHealthyWaiters(new DOMException("Aborted", "AbortError"));
+    setStatus("idle");
+  }
+}
+
+function beginApiHealthPolling(): () => void {
+  stopActivePolling(false);
 
   setStatus("checking");
   const ac = new AbortController();
@@ -147,17 +175,5 @@ export function startApiHealthPolling(): () => void {
 
   void poll();
 
-  return () => {
-    ac.abort();
-    if (pollTimer) {
-      clearTimeout(pollTimer);
-      pollTimer = null;
-    }
-    pollAbort = null;
-
-    if (status !== "healthy") {
-      rejectHealthyWaiters(new DOMException("Aborted", "AbortError"));
-      setStatus("idle");
-    }
-  };
+  return () => stopActivePolling(true);
 }
