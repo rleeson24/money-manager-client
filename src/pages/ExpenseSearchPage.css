@@ -46,6 +46,10 @@
   width: 11rem;
 }
 
+.expense-search-field--custom-date input {
+  width: 10.5rem;
+}
+
 .expense-search-field--search input {
   width: 16rem;
 }

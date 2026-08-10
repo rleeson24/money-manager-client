@@ -16,6 +16,7 @@ import {
   resolveDateRangePreset,
   type DateRangePresetId,
 } from "../utils/dateRangePresets";
+import { todayLocalDateInput } from "../utils/expenseDate";
 import "./ExpenseSearchPage.css";
 
 const searchTableColGroup = (
@@ -37,6 +38,8 @@ function formatCurrency(amount: number): string {
 export default function ExpenseSearchPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePresetId>("this-month");
+  const [customFromDate, setCustomFromDate] = useState("");
+  const [customToDate, setCustomToDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [includeChildCategories, setIncludeChildCategories] = useState(false);
@@ -45,6 +48,7 @@ export default function ExpenseSearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
+  const todayDateInput = todayLocalDateInput();
 
   const categoryOptions = useMemo(
     () => buildGroupedCategoryOptions(categories, { activeOnly: true }),
@@ -96,10 +100,29 @@ export default function ExpenseSearchPage() {
       return;
     }
 
+    let fromDate: string;
+    let toDate: string;
+
+    if (dateRangePreset === "custom") {
+      if (!customFromDate || !customToDate) {
+        setValidationError("Enter both From and To dates for a custom range.");
+        return;
+      }
+      if (customFromDate > customToDate) {
+        setValidationError("From date must be on or before To date.");
+        return;
+      }
+      fromDate = customFromDate;
+      toDate = customToDate;
+    } else {
+      const range = resolveDateRangePreset(dateRangePreset);
+      fromDate = range.fromDate;
+      toDate = range.toDate;
+    }
+
     setValidationError(null);
     setError(null);
 
-    const range = resolveDateRangePreset(dateRangePreset);
     searchAbortRef.current?.abort();
     const ac = new AbortController();
     searchAbortRef.current = ac;
@@ -107,8 +130,8 @@ export default function ExpenseSearchPage() {
 
     try {
       const data = await searchExpenses({
-        fromDate: range.fromDate,
-        toDate: range.toDate,
+        fromDate,
+        toDate,
         search: hasSearch ? trimmedSearch : undefined,
         category: hasCategory ? selectedCategoryId! : undefined,
         includeChildCategories: hasCategory ? includeChildCategories : undefined,
@@ -123,6 +146,16 @@ export default function ExpenseSearchPage() {
       setResults([]);
     } finally {
       if (!ac.signal.aborted) setLoading(false);
+    }
+  }
+
+  function handleDateRangePresetChange(value: string) {
+    const preset = value as DateRangePresetId;
+    setDateRangePreset(preset);
+    if (preset === "custom" && !customFromDate && !customToDate) {
+      const thisMonth = resolveDateRangePreset("this-month");
+      setCustomFromDate(thisMonth.fromDate);
+      setCustomToDate(todayLocalDateInput());
     }
   }
 
@@ -142,7 +175,7 @@ export default function ExpenseSearchPage() {
             <label htmlFor="date-range-preset">Date range</label>
             <Select
               value={dateRangePreset}
-              onValueChange={(value) => setDateRangePreset(value as DateRangePresetId)}
+              onValueChange={handleDateRangePresetChange}
             >
               {DATE_RANGE_PRESETS.map((preset) => (
                 <SelectItem key={preset.id} value={preset.id}>
@@ -151,6 +184,31 @@ export default function ExpenseSearchPage() {
               ))}
             </Select>
           </div>
+
+          {dateRangePreset === "custom" ? (
+            <>
+              <div className="expense-search-field expense-search-field--custom-date">
+                <label htmlFor="custom-from-date">From</label>
+                <Input
+                  id="custom-from-date"
+                  type="date"
+                  value={customFromDate}
+                  max={todayDateInput}
+                  onChange={(e) => setCustomFromDate(e.target.value)}
+                />
+              </div>
+              <div className="expense-search-field expense-search-field--custom-date">
+                <label htmlFor="custom-to-date">To</label>
+                <Input
+                  id="custom-to-date"
+                  type="date"
+                  value={customToDate}
+                  max={todayDateInput}
+                  onChange={(e) => setCustomToDate(e.target.value)}
+                />
+              </div>
+            </>
+          ) : null}
 
           <div className="expense-search-field expense-search-field--search">
             <label htmlFor="expense-search-term">Description</label>

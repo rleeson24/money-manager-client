@@ -4,7 +4,8 @@ export type DateRangePresetId =
   | "last-3-months"
   | "last-6-months"
   | "this-year"
-  | "last-year";
+  | "last-year"
+  | "custom";
 
 export interface DateRangePreset {
   id: DateRangePresetId;
@@ -39,10 +40,13 @@ export const DATE_RANGE_PRESETS: DateRangePreset[] = [
   { id: "last-6-months", label: "Last 6 months" },
   { id: "this-year", label: "This year" },
   { id: "last-year", label: "Last year" },
+  { id: "custom", label: "Custom" },
 ];
 
+export type ResolvableDateRangePresetId = Exclude<DateRangePresetId, "custom">;
+
 export function resolveDateRangePreset(
-  presetId: DateRangePresetId,
+  presetId: ResolvableDateRangePresetId,
   today: Date = new Date()
 ): DateRange {
   const year = today.getFullYear();
