@@ -6,7 +6,7 @@ import {
   Input,
   Button,
 } from "../components/chatGPTUIComponents";
-import { getExpenses, updateExpense, type Expense } from "../services/expenseService";
+import { bulkUpdateExpenses, getExpenses, updateExpense, type Expense } from "../services/expenseService";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
 import {
@@ -54,12 +54,14 @@ export default function CreditCardExpenses() {
   const [sortColumn, setSortColumn] = useState<SortColumn>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [loading, setLoading] = useState(false);
+  const [exclusionPending, setExclusionPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editingAmount, setEditingAmount] = useState<Record<number, string>>({});
   const [focusedAmountId, setFocusedAmountId] = useState<number | null>(null);
   const undoStack = useRef<Expense[][]>([]);
   const debounceRef = useRef<{ [key: string]: ReturnType<typeof setTimeout> }>({});
   const loadExpensesAbortRef = useRef<AbortController | null>(null);
+  const excludeAllRef = useRef<HTMLInputElement>(null);
 
   const paymentMethodOptions = useMemo(
     () =>
@@ -284,6 +286,77 @@ export default function CreditCardExpenses() {
       .reduce((sum, exp) => sum + (exp.amount || 0), 0);
   }
 
+  const allExcluded = expenses.length > 0 && expenses.every((exp) => exp.excludeFromCredit);
+  const noneExcluded = expenses.every((exp) => !exp.excludeFromCredit);
+
+  useEffect(() => {
+    if (excludeAllRef.current) {
+      excludeAllRef.current.indeterminate =
+        expenses.length > 0 && !allExcluded && !noneExcluded;
+    }
+  }, [allExcluded, noneExcluded, expenses.length]);
+
+  async function setExcludedForAll(excluded: boolean) {
+    const ids = expenses
+      .filter((exp) => !!exp.excludeFromCredit !== excluded)
+      .map(expIdNum);
+    if (ids.length === 0 || exclusionPending) return;
+
+    const idSet = new Set(ids);
+    const previous = expenses;
+
+    for (const id of ids) {
+      const key = `${id}-excludeFromCredit`;
+      if (debounceRef.current[key]) {
+        clearTimeout(debounceRef.current[key]);
+        delete debounceRef.current[key];
+      }
+    }
+
+    setExpenses((prev) =>
+      prev.map((exp) =>
+        idSet.has(expIdNum(exp)) ? { ...exp, excludeFromCredit: excluded } : exp
+      )
+    );
+    setDirtyCells((d) => {
+      const next = { ...d };
+      for (const id of ids) next[`${id}-excludeFromCredit`] = true;
+      return next;
+    });
+    setErrorCells((e) => {
+      const next = { ...e };
+      for (const id of ids) next[`${id}-excludeFromCredit`] = false;
+      return next;
+    });
+    setExclusionPending(true);
+    setError(null);
+
+    try {
+      await bulkUpdateExpenses(ids, { excludeFromCredit: excluded });
+      setDirtyCells((d) => {
+        const next = { ...d };
+        for (const id of ids) next[`${id}-excludeFromCredit`] = false;
+        return next;
+      });
+    } catch (err) {
+      console.error("Error updating exclusions:", err);
+      setExpenses((current) =>
+        current.map((exp) => {
+          const prior = previous.find((p) => expIdNum(p) === expIdNum(exp));
+          return prior ? { ...exp, excludeFromCredit: prior.excludeFromCredit } : exp;
+        })
+      );
+      setDirtyCells((d) => {
+        const next = { ...d };
+        for (const id of ids) next[`${id}-excludeFromCredit`] = false;
+        return next;
+      });
+      setError(excluded ? "Failed to exclude all expenses" : "Failed to clear exclusions");
+    } finally {
+      setExclusionPending(false);
+    }
+  }
+
   // Mark selected expenses as paid
   function handleMarkAsPaid() {
     const today = new Date().toISOString().split("T")[0];
@@ -369,7 +442,19 @@ export default function CreditCardExpenses() {
                 <thead>
                   <tr>
                     <th className="w-10 p-2 text-center font-semibold select-none">
-                      <span className="text-xs">Excl</span>
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="text-xs">Excl</span>
+                        <input
+                          ref={excludeAllRef}
+                          type="checkbox"
+                          checked={allExcluded}
+                          disabled={loading || exclusionPending || expenses.length === 0}
+                          aria-label={allExcluded ? "Exclude none" : "Exclude all"}
+                          title={allExcluded ? "Exclude none" : "Exclude all"}
+                          onChange={(e) => void setExcludedForAll(e.target.checked)}
+                          className="cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </div>
                     </th>
                     <th
                       className="p-2 text-left font-semibold cursor-pointer hover:bg-gray-200/80 dark:hover:bg-slate-600/80 select-none w-32 transition-colors"
@@ -562,8 +647,22 @@ export default function CreditCardExpenses() {
         )}
 
         <div className="credit-card-expenses-footer">
-          <div className="flex items-center gap-2">
-            <Button onClick={handleMarkAsPaid} variant="primary" disabled={loading}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => void setExcludedForAll(true)}
+              variant="secondary"
+              disabled={loading || exclusionPending || expenses.length === 0 || allExcluded}
+            >
+              Exclude all
+            </Button>
+            <Button
+              onClick={() => void setExcludedForAll(false)}
+              variant="secondary"
+              disabled={loading || exclusionPending || expenses.length === 0 || noneExcluded}
+            >
+              Exclude none
+            </Button>
+            <Button onClick={handleMarkAsPaid} variant="primary" disabled={loading || exclusionPending}>
               Mark as paid
             </Button>
             <Button

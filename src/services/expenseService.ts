@@ -324,7 +324,7 @@ export async function deleteExpense(id: number): Promise<void> {
 
 /**
  * Bulk update expenses.
- * When USE_API: PATCH /api/expenses/bulk with body { Ids, ExpenseDate?, Category?, setCategoryToNull?, DatePaid?, setDatePaidToNull? }
+ * When USE_API: PATCH /api/expenses/bulk with body { Ids, ExpenseDate?, Category?, setCategoryToNull?, DatePaid?, setDatePaidToNull?, ExcludeFromCredit? }
  */
 export async function bulkUpdateExpenses(ids: number[], updates: Partial<Expense>): Promise<void> {
   if (USE_API) {
@@ -332,6 +332,7 @@ export async function bulkUpdateExpenses(ids: number[], updates: Partial<Expense
     if (updates.date != null) body.ExpenseDate = updates.date;
     if (updates.category !== undefined) body.Category = updates.category;
     if (updates.datePaid !== undefined) body.DatePaid = updates.datePaid;
+    if (updates.excludeFromCredit !== undefined) body.ExcludeFromCredit = updates.excludeFromCredit;
     await apiJson("/api/expenses/bulk", { method: "PATCH", body: JSON.stringify(body) }, "Failed to bulk update expenses");
     return;
   }
@@ -342,6 +343,7 @@ export async function bulkUpdateExpenses(ids: number[], updates: Partial<Expense
       if (patch.ExpenseDate != null) mockExpenses[index].expenseDate = patch.ExpenseDate as string;
       if (patch.Category !== undefined) mockExpenses[index].category = patch.Category as number;
       if (patch.DatePaid !== undefined) mockExpenses[index].datePaid = patch.DatePaid as string;
+      if (patch.ExcludeFromCredit !== undefined) mockExpenses[index].excludeFromCredit = patch.ExcludeFromCredit as boolean;
       mockExpenses[index].modifiedDateTime = new Date().toISOString();
     }
   });
