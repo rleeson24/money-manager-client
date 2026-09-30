@@ -19,6 +19,15 @@ import { ThemeProvider } from "./theme/ThemeProvider";
 import "./index.css";
 
 async function bootstrap() {
+  // If the dev server still served the React shell for the auth redirect URI,
+  // leave before MSAL consumes the hash. The trailing slash loads auth/redirect/index.html.
+  if (window.location.pathname === "/auth/redirect") {
+    window.location.replace(
+      `${window.location.origin}/auth/redirect/${window.location.search}${window.location.hash}`
+    );
+    return;
+  }
+
   await initializeMsal();
 
   const app = (
