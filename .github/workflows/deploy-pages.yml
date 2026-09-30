@@ -66,10 +66,10 @@ jobs:
               "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects"
           fi
 
-      - uses: cloudflare/pages-action@v1
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ env.CF_API_TOKEN }}
           accountId: ${{ env.CF_ACCOUNT_ID }}
-          projectName: money-manager-client
-          directory: dist
+          command: pages deploy dist --project-name=money-manager-client
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
