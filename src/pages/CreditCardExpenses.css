@@ -52,6 +52,36 @@
   border-bottom: none;
 }
 
+.credit-card-expenses-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+}
+
+.credit-card-expenses-delete svg {
+  width: 16px;
+  height: 16px;
+}
+
+.credit-card-expenses-delete:hover:not(:disabled) {
+  background: transparent;
+  color: var(--color-error-text-strong);
+}
+
+.credit-card-expenses-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .credit-card-expenses-footer {
   flex-shrink: 0;
   display: flex;

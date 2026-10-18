@@ -1,12 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactSelect, { SingleValue } from "react-select";
 import {
   Card,
   Input,
   Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "../components/chatGPTUIComponents";
-import { bulkUpdateExpenses, getExpenses, updateExpense, type Expense } from "../services/expenseService";
+import { bulkUpdateExpenses, deleteExpense, getExpenses, updateExpense, type Expense } from "../services/expenseService";
 import { getPaymentMethods, type PaymentMethod } from "../services/paymentMethodService";
 import { getCategories, type Category } from "../services/categoryService";
 import {
@@ -27,6 +31,7 @@ const creditCardTableColGroup = (
     <col style={{ width: 112 }} />
     <col />
     <col style={{ width: 128 }} />
+    <col style={{ width: 48 }} />
   </colgroup>
 );
 
@@ -55,6 +60,8 @@ export default function CreditCardExpenses() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [loading, setLoading] = useState(false);
   const [exclusionPending, setExclusionPending] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editingAmount, setEditingAmount] = useState<Record<number, string>>({});
   const [focusedAmountId, setFocusedAmountId] = useState<number | null>(null);
@@ -357,6 +364,61 @@ export default function CreditCardExpenses() {
     }
   }
 
+  function clearPendingUpdates(id: number) {
+    const prefix = `${id}-`;
+    for (const key of Object.keys(debounceRef.current)) {
+      if (!key.startsWith(prefix)) continue;
+      clearTimeout(debounceRef.current[key]);
+      delete debounceRef.current[key];
+    }
+  }
+
+  function clearCellState(
+    setter: Dispatch<SetStateAction<CellState>>,
+    id: number
+  ) {
+    const prefix = `${id}-`;
+    setter((current) => {
+      const next = { ...current };
+      for (const key of Object.keys(next)) {
+        if (key.startsWith(prefix)) delete next[key];
+      }
+      return next;
+    });
+  }
+
+  async function handleDeleteConfirm() {
+    const id = deleteConfirmId;
+    if (id == null || deletingId != null) return;
+
+    clearPendingUpdates(id);
+    setDeletingId(id);
+    setError(null);
+
+    try {
+      await deleteExpense(id);
+      setExpenses((prev) => prev.filter((exp) => expIdNum(exp) !== id));
+      undoStack.current = undoStack.current.map((snapshot) =>
+        snapshot.filter((exp) => expIdNum(exp) !== id)
+      );
+      clearCellState(setDirtyCells, id);
+      clearCellState(setErrorCells, id);
+      setEditingAmount((prev) => {
+        if (prev[id] === undefined) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      setFocusedAmountId((prev) => (prev === id ? null : prev));
+      setDeleteConfirmId(null);
+    } catch (err) {
+      console.error("Error deleting expense:", err);
+      setError("Failed to delete expense");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   // Mark selected expenses as paid
   function handleMarkAsPaid() {
     const today = new Date().toISOString().split("T")[0];
@@ -485,6 +547,9 @@ export default function CreditCardExpenses() {
                       onClick={() => handleSort("datePaid")}
                     >
                       Date Paid {getSortIcon("datePaid")}
+                    </th>
+                    <th className="p-2 text-center font-semibold">
+                      <span className="sr-only">Delete</span>
                     </th>
                   </tr>
                 </thead>
@@ -634,6 +699,32 @@ export default function CreditCardExpenses() {
                         {cellBadge(id, "datePaid")}
                       </div>
                     </td>
+                    <td className="p-1.5 text-center align-middle border-b border-gray-200 dark:border-gray-600">
+                      <button
+                        type="button"
+                        className="credit-card-expenses-delete"
+                        onClick={() => setDeleteConfirmId(id)}
+                        disabled={deletingId === id}
+                        aria-label={`Delete ${exp.description || "expense"}`}
+                        title="Delete"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          <line x1="10" x2="10" y1="11" y2="17" />
+                          <line x1="14" x2="14" y1="11" y2="17" />
+                        </svg>
+                      </button>
+                    </td>
                   </tr>
                 ); })}
                 </tbody>
@@ -693,6 +784,40 @@ export default function CreditCardExpenses() {
           </Button>
         </div>
       </Card>
+
+      <Dialog open={deleteConfirmId != null}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              Are you sure you want to delete{" "}
+              <strong>
+                {expenses.find((exp) => expIdNum(exp) === deleteConfirmId)?.description ||
+                  "this expense"}
+              </strong>
+              ? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="secondary"
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={deletingId != null}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => void handleDeleteConfirm()}
+                disabled={deletingId != null}
+              >
+                {deletingId != null ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
