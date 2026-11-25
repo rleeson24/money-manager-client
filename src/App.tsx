@@ -18,6 +18,8 @@ import ExpenseSearchPage from "./pages/ExpenseSearchPage";
 import AdministrationPage from "./pages/AdministrationPage";
 import ImportPage from "./pages/ImportPage";
 import CategoriesPage from "./pages/CategoriesPage";
+import ReportsPage from "./pages/ReportsPage";
+import BudgetReportPage from "./pages/BudgetReportPage";
 import { isAuthEnabled } from "./auth/msalConfig";
 import { USE_API } from "./config/api";
 import "./App.css";
@@ -37,6 +39,10 @@ function App() {
             <Route path="/expenses/search" element={<ExpenseSearchPage />} />
             <Route path="/expenses/creditcard" element={<CreditCardExpenses />} />
             <Route path="/expenses/creditcard/compare" element={<CreditCardComparePage />} />
+            <Route path="/reports" element={<ReportsPage />}>
+              <Route index element={<Navigate to="budget" replace />} />
+              <Route path="budget" element={<BudgetReportPage />} />
+            </Route>
             <Route path="/administration" element={<AdministrationPage />}>
               <Route index element={<Navigate to="import" replace />} />
               <Route path="import" element={<ImportPage />} />

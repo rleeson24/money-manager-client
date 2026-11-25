@@ -34,6 +34,14 @@ const iconCreditCard = (
   </svg>
 );
 
+const iconReports = (
+  <svg className="site-header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </svg>
+);
+
 const iconAdministration = (
   <svg className="site-header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <circle cx="12" cy="12" r="3" />
@@ -68,6 +76,7 @@ const navItems = [
   { to: "/expenses", label: "Edit Expenses", icon: iconChatGPT, end: true },
   { to: "/expenses/search", label: "Search Expenses", icon: iconSearch },
   { to: "/expenses/creditcard", label: "Credit Card Expenses", icon: iconCreditCard },
+  { to: "/reports", label: "Reports", icon: iconReports },
   { to: "/administration", label: "Administration", icon: iconAdministration },
 ] as const;
 
